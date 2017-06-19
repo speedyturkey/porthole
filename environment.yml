@@ -1,0 +1,6 @@
+name: porthole
+dependencies:
+  - python=3.4
+  - pymysql
+  - xlsxwriter
+  - SQLAlchemy
