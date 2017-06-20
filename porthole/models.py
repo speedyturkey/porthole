@@ -1,7 +1,11 @@
 from .app import config
 from sqlalchemy import MetaData, ForeignKey, Table, Column, Integer, String, DateTime, Boolean, func
 
-schema = config[config['Default']['database']]['schema']
+try:
+    schema = config[config['Default']['database']]['schema']
+except:
+    schema = None
+
 metadata = MetaData(schema=schema)
 
 automated_reports = Table('automated_reports', metadata,

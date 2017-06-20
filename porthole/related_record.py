@@ -15,7 +15,10 @@ class RelatedRecord(object):
     """
     def __init__(self, connection_manager, table):
         self.cm = connection_manager
-        self.table = Table(table, MetaData(), autoload=True, autoload_with=connection_manager.engine)
+        self.table = Table(table,
+                            MetaData(schema=connection_manager.schema),
+                            autoload=True,
+                            autoload_with=connection_manager.engine)
         self.primary_key_name = self.inspect_primary_key()
         self.primary_key = None
         self.inserted = False
@@ -55,11 +58,16 @@ class ChildRecord(RelatedRecord):
     """
     A ChildRecord is the child of a RelatedRecord. Functionality is similar
     except that ChildRecord is related to the parent through a foreign key.
+    If foreign key name is not provided, an attempt is made to inspect the
+    reflected table.
     """
-    def __init__(self, connection_manager, table, parent):
+    def __init__(self, connection_manager, table, parent, foreign_key_name=None):
         super().__init__(connection_manager, table)
         self.parent = parent
-        self.foreign_key_name = self.inspect_foreign_key()
+        if foreign_key_name:
+            self.foreign_key_name = foreign_key_name
+        else:
+            self.foreign_key_name = self.inspect_foreign_key()
         self.foreign_key = parent.primary_key
 
     def inspect_foreign_key(self):
