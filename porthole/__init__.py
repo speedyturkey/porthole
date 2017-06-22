@@ -1,5 +1,5 @@
 from .app import config
-from .setup_config import write_default_config
+from .getting_started import new_config, setup_tables
 from .connection_manager import ConnectionManager
 from .queries import QueryGenerator, QueryReader, QueryResult
 from .xlsx import WorkbookBuilder

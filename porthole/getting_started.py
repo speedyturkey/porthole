@@ -1,9 +1,14 @@
-from pathlib import Path
+import os
 from configparser import ConfigParser
 from collections import OrderedDict
+from porthole import config, ConnectionManager
+from porthole.models import metadata
+
 
 NONE = ""
+configdir = 'config'
 configfile = 'config.ini'
+configpath = os.path.join(configdir, configfile)
 
 Default =  OrderedDict([('base_file_path', NONE),
                         ('query_path', NONE),
@@ -32,7 +37,7 @@ Debug = OrderedDict([('debug_mode', "FALSE"),
 
 Admin = OrderedDict([('admin_email', NONE)])
 
-def write_default_config():
+def new_config():
     parser = ConfigParser()
 
     parser['Default'] = Default
@@ -43,10 +48,21 @@ def write_default_config():
     parser['Debug'] = Debug
     parser['Admin'] = Admin
 
-    config_path = Path(configfile)
-    if config_path.is_file():
-        print("Config template already exists.")
-    else:
-        with open (configfile, 'w') as f:
+    if not os.path.exists(configdir):
+        os.makedirs(configdir)
+        print("Created directory {}.".format(configdir))
+
+    if not os.path.exists(configpath):
+        with open (configpath, 'w') as f:
             parser.write(f)
-        print("New config template written as {}.".format(configfile))
+        print("Created blank template {}.".format(configpath))
+
+def setup_tables():
+    db = config['Default']['database']
+    try:
+        cm = ConnectionManager(db)
+        cm.connect()
+        metadata.create_all(cm.engine)
+        print("Tables successfully created.")
+    except:
+        print("Failed to create tables.")
