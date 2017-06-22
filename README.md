@@ -10,9 +10,78 @@ Porthole allows you to configure and build simple automated reports.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions will allow you to install and configure your environment. You will be running your first reports after just a couple of steps:
 
-### Prerequisites
+1. Install Porthole.
+2. Configure your database connection(s) and other important settings.
+3. Run setup scripts (requires database write privileges).
+4. Start creating reports.
+
+#### Prerequisites
+
+You must have first installed Python 3. It is recommended but not required to use an environment/package manager such as Anaconda. For more information, see the "Install Conda" section below. At the very least, if you are using a Mac, please do NOT use the "system" Python.
+
+You must also have access to a compatible database (at time of writing, this includes MySQL and SQLite) and have CRUD privileges.
+
+### Step 1 - Install Porthole
+
+Use pip to install Porthole from your command prompt or terminal window:
+
+`pip install porthole`
+
+Porthole will be installed, along with its dependencies, using your default Python or whichever virtual environment you have chosen.
+
+### Step 2 - Configuration
+
+From your terminal window, cd to your project directory. From the Python interpreter, execute the following:
+
+```python
+import porthole
+porthole.new_config()
+```
+
+This function will create a new directory called "config" (if it does not already exist), with a file inside called `config.ini`. This is a blank configuration template containing the basic information necessary to get started. The values defined in this file will be used for any connections you'll make to databases, email servers, and to your file system. The values defined in this section are required for correct functionality.
+
+##### Default
+
+This section currently assumes that you are using OS X but will be updated with instructions for Windows, where relevant.
+
+Required values:
+* base_file_path - The default location for saving files. You must define the full, absolute path. The path must include a trailing slash.
+* query_path - The default location for reading .sql files. This path should be relative to your project directory. THe path must include a trailing slash.
+* database - The name of the default database connection you'd like to use. This should be the section title from a database connection (defined in the next section below).
+
+##### Database Connections
+
+Since any database connection requires several parameters, database configs are defined as their own sections. The parameters required in a given section depend on which RDBMS is being defined. The full list of parameters is as follows:
+
+* Section header - e.g. [Production] - This is a descriptive label which will identify a given connection.
+* rdbms - The type of RDBMS. Currently supported options include mysql and sqlite.
+* host - The connection string or endpoint. For sqlite, this is the database file name.
+* port - Usually defaults to 3306 for mysql. Not used for sqlite but set to 0 by default.
+* user - The account name for the database user.
+* password - The user's password.
+* schema - The default schema or database name. You should have permissions to create and update tables in this schema.
+
+### Step 3 - Create database tables
+
+Porthole uses several database tables for report definition and recipient management. It is therefore necessary to create these tables before using the package.
+
+Execute the following:
+
+```python
+import porthole
+porthole.setup_tables()
+```
+### Step 4 - Create reports
+
+Coming soon.
+
+
+
+##### Setting up your development environment
+
+The information in this section is not necessary for end users. Instead, it is intended to facilitate setup of a development environment for contribution to the Porthole project.s
 
 ##### Install Conda
 
@@ -46,36 +115,6 @@ After Conda is installed, use it to create a virtual environment. The required p
 To activate your new environment, execute the following command:
 
 `source activate porthole`
-
-### Installing
-
-##### Setup Config
-
-Make a copy of example.ini and rename it as config.ini. The values defined in this file will be used for any connections you'll make to databases, email servers, and to your file system. The values defined in this section are required for correct functionality.
-
-###### Default
-
-Required values:
-* base_file_path - The default location for saving files. You must define the full, absolute path. The path must include a trailing slash.
-* query_path - The default location for reading .sql files. This path should be relative to your project directory. THe path must include a trailing slash.
-* database - The name of the default database connection you'd like to use.
-
-###### Database Connections
-
-Since any database connection requires several parameters, database configs are defined as their own sections. The parameters required in a given section depend on which RDBMS is being defined. The full list of parameters is as follows:
-
-* rdbms - The type of RDBMS. Currently supported options include mysql and sqlite.
-* host - The connection string or endpoint. For sqlite, this is the database file name.
-* port - Usually defaults to 3306 for mysql. Not used for sqlite but set to 0 by default.
-* user - The account name for the database user.
-* password - The user's password.
-* schema - The default schema or database name.
-
-##### Create database tables
-
-Porthole uses several database tables for report definition and recipient management. It is therefore necessary to create these tables before using the package. Be sure to setup your virtual environment and config file before creating database tables.
-
-Execute the command `python setup.py`.
 
 ## Running the tests
 
