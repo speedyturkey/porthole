@@ -47,8 +47,8 @@ This function will create a new directory called "config" (if it does not alread
 This section currently assumes that you are using OS X but will be updated with instructions for Windows, where relevant.
 
 Required values:
-* base_file_path - The default location for saving files. You must define the full, absolute path. The path must include a trailing slash.
-* query_path - The default location for reading .sql files. This path should be relative to your project directory. THe path must include a trailing slash.
+* base_file_path - The default location for saving files. You must define the full, absolute path. On OS X, the path must include a trailing slash.
+* query_path - The default location for reading .sql files. This path should be relative to your project directory. On OS X, the path must include a trailing slash.
 * database - The name of the default database connection you'd like to use. This should be the section title from a database connection (defined in the next section below).
 
 ##### Database Connections
@@ -62,6 +62,14 @@ Since any database connection requires several parameters, database configs are 
 * user - The account name for the database user.
 * password - The user's password.
 * schema - The default schema or database name. You should have permissions to create and update tables in this schema.
+
+##### Email
+
+In order to send emails, you must have an email account from which to send messages.
+
+* username - The email address you'd like to use.
+* password - The password for that account.
+* host - The smtp server associated with your account (e.g. smtp.gmail.com).
 
 ### Step 3 - Create database tables
 

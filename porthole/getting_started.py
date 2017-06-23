@@ -23,18 +23,17 @@ ConnectionName = OrderedDict([('rdbms', NONE),
                             ('password', NONE),
                             ('schema', NONE)])
 
-Exchange = OrderedDict([('exchange_user', NONE),
-                        ('exchange_password', NONE),
-                        ('host', NONE)])
+Email = OrderedDict([('username', NONE),
+                        ('password', NONE),
+                        ('host', NONE),
+                        ('disabled', "FALSE"),
+                        ('signature', NONE)])
 
 Logging = OrderedDict([('server', "FALSE"),
                         ('logging_db', NONE)])
 
-Email = OrderedDict([('disabled', "FALSE"),
-                        ('signature', NONE)])
-
 Debug = OrderedDict([('debug_mode', "FALSE"),
-                        ('debug_email', NONE)])
+                        ('debug_recipients', NONE)])
 
 Admin = OrderedDict([('admin_email', NONE)])
 
@@ -43,9 +42,8 @@ def new_config():
 
     parser['Default'] = Default
     parser['ConnectionName'] = ConnectionName
-    parser['Exchange'] = Exchange
-    parser['Logging'] = Logging
     parser['Email'] = Email
+    parser['Logging'] = Logging
     parser['Debug'] = Debug
     parser['Admin'] = Admin
 
