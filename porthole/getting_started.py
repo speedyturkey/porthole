@@ -38,6 +38,7 @@ Debug = OrderedDict([('debug_mode', "FALSE"),
 Admin = OrderedDict([('admin_email', NONE)])
 
 def new_config():
+    "Writes a blank config file. Use during new project setup or reference example.ini."
     parser = ConfigParser()
 
     parser['Default'] = Default
@@ -57,11 +58,12 @@ def new_config():
         print("Created blank template {}.".format(configpath))
 
 def setup_tables():
+    "Executes table creation statements for core tables in user-defined default database."
     db = config['Default']['database']
     try:
         cm = ConnectionManager(db)
         cm.connect()
         metadata.create_all(cm.engine)
         print("Tables successfully created.")
-    except:
-        print("Failed to create tables.")
+    except Exception as e:
+        print("Failed to create tables. Encountered the following error(s): {}.".format(e))
