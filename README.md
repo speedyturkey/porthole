@@ -47,8 +47,8 @@ This function will create a new directory called "config" (if it does not alread
 This section currently assumes that you are using OS X but will be updated with instructions for Windows, where relevant.
 
 Required values:
-* base_file_path - The default location for saving files. You must define the full, absolute path. The path must include a trailing slash.
-* query_path - The default location for reading .sql files. This path should be relative to your project directory. THe path must include a trailing slash.
+* base_file_path - The default location for saving files. You must define the full, absolute path. On OS X, the path must include a trailing slash.
+* query_path - The default location for reading .sql files. This path should be relative to your project directory. On OS X, the path must include a trailing slash.
 * database - The name of the default database connection you'd like to use. This should be the section title from a database connection (defined in the next section below).
 
 ##### Database Connections
@@ -63,6 +63,14 @@ Since any database connection requires several parameters, database configs are 
 * password - The user's password.
 * schema - The default schema or database name. You should have permissions to create and update tables in this schema.
 
+##### Email
+
+In order to send emails, you must have an email account from which to send messages.
+
+* username - The email address you'd like to use.
+* password - The password for that account.
+* host - The smtp server associated with your account (e.g. smtp.gmail.com).
+
 ### Step 3 - Create database tables
 
 Porthole uses several database tables for report definition and recipient management. It is therefore necessary to create these tables before using the package.
@@ -73,21 +81,59 @@ Execute the following:
 import porthole
 porthole.setup_tables()
 ```
+
+This creates four tables in your database:
+
+* automated_reports - Stores the reports you have defined. Reports must be uniquely identified by name and can be deactivated by setting the `active` attribute to 0.
+* automated_report_contacts - Stores the names and email addresses of individuals who should receive reports.
+* automated_report_recipients - This table facilitates the relationship between the previous two. It contains one record per report recipient. Recipients can be defined as 'to' or 'cc' recipients.
+* report_logs - By default, reports will log their execution and results to this table (including error details).
+
+
 ### Step 4 - Create reports
 
-Coming soon.
+Defining a new report involves adding records to the tables created in Step 3.
+
+The following records are required:
+
+| Table                       | Required Attributes                   | Optional Attributes   | Notes                                                                  |
+|-----------------------------|---------------------------------------|-----------------------|------------------------------------------------------------------------|
+| automated_reports           | report_name; active                   |                       |                                                                        |
+| automated_report_contacts   | email_address                         | first_name; last_name |                                                                        |
+| automated_report_recipients | report_id; contact_id; recipient_type |                       | Every report requires at least one record where recipient_type = 'to'. |
+
+It's finally time to write an actual report! Here is a sample report script.
+
+```python
+from porthole import GenericReport
+
+report = GenericReport(report_name='sample_report', report_title='Sample Report')
+report.build_file()
+report.create_worksheet_from_query( query={'filename': 'sample_query'},
+                                    sheet_name='Sheet1',
+                                    read_required=True
+                                )
+report.subject = 'Sample Report'
+report.message = 'Please see attached for the Sample Report.'
+report.execute()
+
+```
 
 
+## Development
 
-##### Setting up your development environment
 
-The information in this section is not necessary for end users. Instead, it is intended to facilitate setup of a development environment for contribution to the Porthole project.s
+#### Setting up your development environment
+
+The information in this section is not necessary for end users. Instead, it is intended to facilitate setup of a development environment for contribution to the Porthole project.
 
 ##### Install Conda
 
-Anaconda (commonly shortened to "Conda") is a widely used environment and package manager for Python. Among other useful features, it makes it easy to setup and install prerequisite Python packages (that is, to setup and configure a development environment). It is recommended to install "Miniconda", which installs only the required packages.
+Anaconda (commonly shortened to "Conda") is a widely used environment and package manager for Python. Among other useful features, it makes it easy to setup and install prerequisite Python packages (that is, to setup and configure a development environment).
 
 ###### OS X Installation Instructions
+
+"Miniconda", which installs only the required packages, is all that is necessary on OS X.
 
 Full instructions can be found here: [https://conda.io](https://conda.io/docs/install/quick.html).
 
@@ -103,7 +149,11 @@ Full instructions can be found here: [https://conda.io](https://conda.io/docs/in
 
 ###### Windows Installation Instructions
 
-Coming soon.
+For Windows users, the more full featured Anaconda may be a better option, as it is more user friendly.
+
+1. Download the Windows installer.
+2. Follow the instructions.
+3. The installer does not recommend adding Conda to your PATH but doing so will probably make your life easier.
 
 
 ##### Create virtual environment
