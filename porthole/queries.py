@@ -44,7 +44,7 @@ class QueryGenerator(object):
         self.sql = sql
 
     def construct_query(self):
-        # Resolve full SQL statement.
+        "Read and parameterize (if necessary) a .sql file for execution."
         if self.filename:
             reader = QueryReader(filename=self.filename, params=self.params)
             self.sql = reader.sql

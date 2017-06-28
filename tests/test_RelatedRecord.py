@@ -8,6 +8,7 @@ class TestRelatedRecord(unittest.TestCase):
     def setUp(self):
         cm = ConnectionManager()
         cm.rdbms = 'sqlite'
+        cm.schema = 'main'
         cm.db = 'test'
         cm.db_host = 'test.db'
         cm.engine = cm.create_engine()

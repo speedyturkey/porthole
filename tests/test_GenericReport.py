@@ -31,7 +31,7 @@ class TestGenericReport(unittest.TestCase):
                                 )
         report.build_file()
         self.assertEqual(report.record_count, 0)
-        report.create_worksheet_from_query(query=TEST_QUERY,
+        report.create_worksheet_from_query(sql=TEST_QUERY,
                                             sheet_name='Sheet1')
         report.close_workbook()
         self.assertTrue(report.record_count > 0)
@@ -126,7 +126,7 @@ class TestGenericReport(unittest.TestCase):
                                 report_name='test_report_active'
                                 , report_title = 'Test Report - Active'
                                 )
-        report.create_worksheet_from_query(query={'name': 'does_not_exist'},
+        report.create_worksheet_from_query(query_file='does_not_exist',
                                             sheet_name='Sheet1')
         self.assertFalse(report.error_detail == [])
         report.finalize_log_record()
@@ -138,7 +138,7 @@ class TestGenericReport(unittest.TestCase):
                                 , report_title = 'Test Report - Active'
                                 )
         report.build_file()
-        report.create_worksheet_from_query(query={'name': 'test_report_query'},
+        report.create_worksheet_from_query(query_file='test_report_query',
                                             sheet_name='Sheet/1')
         report.close_workbook()
         self.assertFalse(report.error_detail == [])
@@ -151,7 +151,7 @@ class TestGenericReport(unittest.TestCase):
                                 , report_title = 'Test Report - Active'
                                 )
         report.build_file()
-        report.create_worksheet_from_query(query=TEST_QUERY,
+        report.create_worksheet_from_query(sql=TEST_QUERY,
                                             sheet_name='Sheet1')
         report.error_detail.append("Forced error")
         report.subject = "test_send_failure_notification_on_error"

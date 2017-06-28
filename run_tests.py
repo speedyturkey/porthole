@@ -40,10 +40,10 @@ def main():
 
     # Select all of your test classes here.
     test_classes_to_run = [
-                            # TestConnectionManager,
-                            # TestSimpleWorkflow,
-                            # TestRelatedRecord,
-                            # TestGenericReport,
+                            TestConnectionManager,
+                            TestSimpleWorkflow,
+                            TestRelatedRecord,
+                            TestGenericReport,
                             TestQueries
                             ]
 

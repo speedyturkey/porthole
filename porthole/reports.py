@@ -129,9 +129,8 @@ class GenericReport():
         """
         statement = select([automated_reports.c.active])\
                         .where(automated_reports.c.report_name==self.report_name)
-        q = QueryGenerator(cm=self.default_cm, sql=statement)
         try:
-            results = q.execute()
+            results = self.execute_query(sql=statement, increment_counter=False)
             if results.result_data[0][0] == 1:
                 return True
             else:
@@ -185,21 +184,53 @@ class GenericReport():
         if self.report_file:
             self.attachments.append(self.report_file)
 
-    def execute_query(self, sql, cm=None, increment_counter=True):
+    def connect_to(self, db=None):
         """
-        Executes SQL and returns QueryResult object,
-        containing data and metadata.
+        Args:
+            db          (str): Optional. Name of database to connec to.
+                            If not provided, default ConnectionManager is
+                            returned. Otherwise, a new connection is made.
+
+        Returns connected ConnectionManager to selected database.
         """
-        if cm is None:
-            cm = self.default_cm
-        q = QueryGenerator(cm=cm, sql=sql)
+        if not db:
+            return self.default_cm
         try:
-            results = q.execute()
-            if increment_counter:
-                self.record_count += results.result_count
-            return results
+            cm = ConnectionManager(db=db)
+            cm.connect()
+            return cm
         except:
-            self.log_error_detail("Unable to execute query.")
+            self.log_error_detail("Unable to connect to database {}".format(db))
+
+    def execute_query(self, db=None, query_file=None, query_params=None, sql=None, increment_counter=True):
+        """
+        Args:
+            db              (str): Optional. Name of database to execute query against.
+                                If not provided, default is used.
+            query_file      (str): Optional. Name of file to be read without extension.
+            query_params    (dict): Optional. Contains parameter names and values if applicable.
+                                Should only be included along with query_file containing
+                                parameter placeholders.
+            sql             (str or sqlalchemy.sql.selectable.Select statement):
+                                Optional. A SQL query ready for execution.
+            increment_counter (boolean): Defaults to True. Increments GenericReport.record_count
+                                with number of records in returned result set.
+
+        Executes SQL and returns QueryResult object, containing data and metadata.
+        """
+        cm = self.connect_to(db)
+        if cm:
+            q = QueryGenerator(cm=cm, filename=query_file, params=query_params, sql=sql)
+            try:
+                results = q.execute()
+                if increment_counter:
+                    self.record_count += results.result_count
+                if cm.db != self.default_db:
+                    # We want to keep the default_db connection open for the lifetime of this GenericReport.
+                    cm.close()
+                return results
+            except:
+                self.log_error_detail("Unable to execute query.")
 
     def make_worksheet(self, sheet_name, query_results):
         "Adds worksheet to workbook using provided query results."
@@ -211,43 +242,22 @@ class GenericReport():
         except:
             self.log_error_detail("Unable to add worksheet {}".format(sheet_name))
 
-    def read_query(self, query):
-        """
-        Uses QueryReader to read .sql file and parameterize query as necessary.
-
-        Args:
-            query (dict):   Should contain filename (str) and params (dict, optional).
-        """
-        filename = query.get('filename')
-        params = query.get('params')
-        reader = QueryReader(filename=filename, params=params)
-        return reader
-
-    def create_worksheet_from_query(self, query, sheet_name, read_required=False, cm=None):
+    def create_worksheet_from_query(self, sheet_name, query_file=None, query_params=None, sql=None, db=None):
         """
         Args:
-            query           (str,
-                            dict, or
-                            sqlalchemy.sql.selectable.Select): A SQL query ready
-                                for execution, or a dict containing information
-                                necessary to read and/or parameterize a query.
-            sheet_name      (str): The name of the resulting worksheet.
-            read_required   (bool): Defaults to False. Set to true if passing a
-                                query which must be read and/or parameterized
-                                from file. If true, query parameter should be
-                                a dict.
-            cm              (ConnectionManager): Defaults to None, in which case
-                                default ConnectionManager is used.
+            sheet_name      (str): The name of the worksheet to be created.
+            query_file      (str): Optional. Name of file to be read without extension.
+            query_params    (dict): Optional. Contains parameter names and values if applicable.
+                                Should only be included along with query_file containing
+                                parameter placeholders.
+            sql             (str or sqlalchemy.sql.selectable.Select statement):
+                                Optional. A SQL query ready for execution.
+            db              (str): Optional. Name of database to execute query against.
+                                If not provided, default is used.
 
+        Executes a query and uses results to add worksheet to GenericReport.workbook_builder.
         """
-        if cm is None:
-            cm = self.default_cm
-        if read_required:
-            reader = self.read_query(query)
-            sql = reader.sql
-        else:
-            sql = query
-        results = self.execute_query(cm=cm, sql=sql)
+        results = self.execute_query(db=db, query_file=query_file, query_params=query_params, sql=sql)
         self.make_worksheet(sheet_name=sheet_name, query_results=results)
 
     def get_recipients(self):
@@ -258,7 +268,7 @@ class GenericReport():
                         .join(automated_report_recipients)\
                         .join(automated_report_contacts))\
                         .where(automated_reports.c.report_name==self.report_name)
-        results = self.execute_query(statement, increment_counter=False)
+        results = self.execute_query(sql=statement, increment_counter=False)
 
         for recipient in results.result_data:
             if recipient.recipient_type == 'to':
