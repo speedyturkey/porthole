@@ -1,13 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-GenericReport.py
-Created on 01/26/17.
-This module contains functionality to simplify the creation of new automated reports.
-Features include creation of Excel worksheets from query results, emailing of results,
-and database logging.
-"""
-
 import sys
 import os.path
 from sqlalchemy import select
