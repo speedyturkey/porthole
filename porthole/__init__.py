@@ -1,6 +1,6 @@
 from .app import config
 from .getting_started import new_config, setup_tables
-from .connection_manager import ConnectionManager
+from .connections import ConnectionManager
 from .queries import QueryGenerator, QueryReader, QueryResult
 from .xlsx import WorkbookBuilder
 from .mailer import Mailer

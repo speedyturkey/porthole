@@ -2,7 +2,7 @@ import os, re, sys, json
 from decimal import Decimal
 from datetime import date
 from .app import config
-from .connection_manager import ConnectionManager
+from .connections import ConnectionManager
 
 
 class QueryResult(object):

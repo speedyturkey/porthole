@@ -2,7 +2,7 @@ import os
 from configparser import ConfigParser
 from collections import OrderedDict
 from .app import config
-from .connection_manager import ConnectionManager
+from .connections import ConnectionManager
 from .models import metadata
 
 

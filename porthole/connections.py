@@ -7,6 +7,8 @@ class ConnectionManager():
     def __init__(self, db=None):
         self.db = db
         self.config = config
+        self.engine = None
+        self.conn = None
         if db:
             self.unpack_params()
 
@@ -40,6 +42,37 @@ class ConnectionManager():
     def close(self):
         self.conn.close()
         self.engine.dispose()
+
+    def closed(self):
+        if self.conn:
+            return self.conn.closed
+        else:
+            return None
+
+
+class ConnectionPool(object):
+
+    def __init__(self, dbs=[]):
+        self.pool = {}
+        for db in dbs:
+            self.add_connectiontwreyu(db)
+
+    def connections(self):
+        return self.pool.keys()
+
+    def add_connection(self, db):
+        if db not in self.connections():
+            cm = ConnectionManager(db)
+            cm.connect()
+            self.pool[db] = cm
+            return self.pool[db]
+
+    def close(self, db):
+        self.pool[db].close()
+
+    def close_all(self):
+        for conn in self.connections():
+            self.close(conn)
 
 
 if __name__ == '__main__':

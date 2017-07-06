@@ -7,7 +7,7 @@ from .models import (metadata,
                     automated_report_contacts,
                     automated_report_recipients,
                     report_logs)
-from .connection_manager import ConnectionManager
+from .connections import ConnectionManager
 from .related_record import RelatedRecord
 from .mailer import Mailer
 from .queries import QueryGenerator, QueryReader
@@ -106,29 +106,6 @@ class GenericReport():
         except:
             pass
 
-    def log_error_detail(self, error_context):
-        """Provided a description of when error was raised, assembles error message for log
-        and appends the message."""
-        error_value = sys.exc_info()[1]
-        error_message = error_context + '; ' + str(error_value) + ': ' + str(error_value.__doc__)
-        self.error_detail.append(error_message)
-
-    def check_if_active(self):
-        """Queries database to determine if the 'active' attribute for this report
-        is set to 1 (active) or 0 (inactive).
-        """
-        statement = select([automated_reports.c.active])\
-                        .where(automated_reports.c.report_name==self.report_name)
-        try:
-            results = self.execute_query(sql=statement, increment_counter=False)
-            if results.result_data[0][0] == 1:
-                return True
-            else:
-                return False
-        except IndexError:
-            self.log_error_detail("Report does not exist.")
-            raise Exception("Report does not exist.")
-
     def create_log_record(self):
         """Inserts new log record into default report logging table
         using RelatedRecord and saves instance of RelatedRecord for updating
@@ -153,27 +130,6 @@ class GenericReport():
                                     'success': 1}
         self.report_log.update(data_to_update)
 
-    def build_file(self):
-        """Loads file and path information and creates XLSX Writer Workbook object.
-        Default file is named with convention yyyy-mm-dd - Report Name.xlsx
-        """
-        # Construct the file path.
-        try:
-            report_file_name = "{} - {}.xlsx".format(TimeHelper.today(), self.report_title)
-            self.report_file = os.path.join(self.file_path, report_file_name)
-            # Create the workbook.
-            self.workbook_builder = WorkbookBuilder(filename=self.report_file)
-        except:
-            self.log_error_detail("Unable to build file")
-
-    def close_workbook(self):
-        """Closes workbook object after creation is complete.
-        Should always be executed before sending file."""
-        if self.workbook_builder:
-            self.workbook_builder.workbook.close()
-        if self.report_file:
-            self.attachments.append(self.report_file)
-
     def connect_to(self, db=None):
         """
         Args:
@@ -191,64 +147,6 @@ class GenericReport():
             return cm
         except:
             self.log_error_detail("Unable to connect to database {}".format(db))
-
-    def execute_query(self, db=None, query_file=None, query_params=None, sql=None, increment_counter=True):
-        """
-        Args:
-            db              (str): Optional. Name of database to execute query against.
-                                If not provided, default is used.
-            query_file      (str): Optional. Name of file to be read without extension.
-            query_params    (dict): Optional. Contains parameter names and values if applicable.
-                                Should only be included along with query_file containing
-                                parameter placeholders.
-            sql             (str or sqlalchemy.sql.selectable.Select statement):
-                                Optional. A SQL query ready for execution.
-            increment_counter (boolean): Defaults to True. Increments GenericReport.record_count
-                                with number of records in returned result set.
-
-        Executes SQL and returns QueryResult object, containing data and metadata.
-        """
-        cm = self.connect_to(db)
-        if cm:
-            q = QueryGenerator(cm=cm, filename=query_file, params=query_params, sql=sql)
-            try:
-                results = q.execute()
-                if increment_counter:
-                    self.record_count += results.result_count
-                if cm.db != self.default_db:
-                    # We want to keep the default_db connection open for the lifetime of this GenericReport.
-                    cm.close()
-                return results
-            except:
-                self.log_error_detail("Unable to execute query.")
-
-    def make_worksheet(self, sheet_name, query_results):
-        "Adds worksheet to workbook using provided query results."
-        try:
-            self.workbook_builder.add_worksheet(sheet_name=sheet_name,
-                                                field_names=query_results.field_names,
-                                                sheet_data=query_results.result_data
-                                            )
-        except:
-            self.log_error_detail("Unable to add worksheet {}".format(sheet_name))
-
-    def create_worksheet_from_query(self, sheet_name, query_file=None, query_params=None, sql=None, db=None):
-        """
-        Args:
-            sheet_name      (str): The name of the worksheet to be created.
-            query_file      (str): Optional. Name of file to be read without extension.
-            query_params    (dict): Optional. Contains parameter names and values if applicable.
-                                Should only be included along with query_file containing
-                                parameter placeholders.
-            sql             (str or sqlalchemy.sql.selectable.Select statement):
-                                Optional. A SQL query ready for execution.
-            db              (str): Optional. Name of database to execute query against.
-                                If not provided, default is used.
-
-        Executes a query and uses results to add worksheet to GenericReport.workbook_builder.
-        """
-        results = self.execute_query(db=db, query_file=query_file, query_params=query_params, sql=sql)
-        self.make_worksheet(sheet_name=sheet_name, query_results=results)
 
     def get_recipients(self):
         "Performs lookup in database for report recipients based on report name."
@@ -303,26 +201,6 @@ class GenericReport():
         if self.check_whether_to_send_email():
             self.build_email()
             self.send_email()
-
-    def send_failure_notification(self):
-        "Sends failure notification to identified recipients, including logged errors."
-
-        message = """Execution of the following report failed: {}
-
-The following errors were logged:
-""".format(self.report_title)
-
-        for i, error in enumerate(self.error_detail, 1):
-            message += str(i) + '. ' + error + '\n'
-
-        email = Mailer()
-        email.recipients = [self.notification_recipient]
-        email.cc_recipients = ['']
-        email.subject = "Report Failure: {}".format(self.report_title)
-        email.message = message
-        email.attachments = []
-        email.send_email()
-        self.failure_notification_sent = True
 
     def execute(self):
         """
