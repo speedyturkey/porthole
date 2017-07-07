@@ -55,7 +55,7 @@ class ConnectionPool(object):
     def __init__(self, dbs=[]):
         self.pool = {}
         for db in dbs:
-            self.add_connectiontwreyu(db)
+            self.add_connection(db)
 
     def connections(self):
         return self.pool.keys()

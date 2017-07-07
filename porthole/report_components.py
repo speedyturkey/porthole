@@ -1,11 +1,36 @@
 import os, sys
+from sqlalchemy import select
 from . import TimeHelper
 from .app import config
+from .models import (metadata,
+                    automated_reports,
+                    automated_report_contacts,
+                    automated_report_recipients,
+                    report_logs)
 from .mailer import Mailer
 from .queries import QueryGenerator
 from .xlsx import WorkbookBuilder
 
-class ReportWriter(object):
+class Loggable(object):
+    """
+    Inherit from this class to implement basic error logging.
+
+    """
+    def log_error(self, msg=None):
+        """
+        Args:
+            msg (str) Optional. Appends msg and exception context to error_log
+                list as an attribute of the object.
+        """
+        if not hasattr(self, 'error_log'):
+            self.error_log = []
+        error_value = sys.exc_info()[1]
+        log_record = str(error_value) + ': ' + str(error_value.__doc__)
+        if msg:
+            log_record = msg + ': ' + log_record
+        self.error_log.append(log_record)
+
+class ReportWriter(Loggable):
     """
     The purpose of this class is to use the QueryGenerator and WorkbookBuilder
     together to make an Excel file and populate it with data.
@@ -17,13 +42,8 @@ class ReportWriter(object):
         self.filename = None
         self.file_path = config['Default'].get('base_file_path')
         self.record_count = 0
+        self.error_log = []
         self.error_logger = error_logger
-
-    def log_error(self, msg):
-        if self.error_logger:
-            self.error_logger.log_error(msg)
-        else:
-            print(msg)
 
     def build_file(self):
         """
@@ -144,19 +164,37 @@ class DatabaseLogger(object):
     Don't want to log if report not active,
     or if logging is not enabled.
     """
-    def __init__(self):
-        pass
+    def __init__(self, cm, report_name, log_table='report_logs'):
+        self.cm = cm
+        self.report_name = report_name
+        self.log_table = log_table
 
     def create_record(self):
-        pass
+        """
+        Inserts new log record into default report logging table
+        using RelatedRecord and saves instance of RelatedRecord for updating
+        later on with results of report execution.
+        """
+        report_log = RelatedRecord(self.cm, self.log_table)
+        report_log.insert({'report_name': self.report_name,
+                            'started_at': TimeHelper.now(string=False)})
+        self.report_log = report_log
 
-    def finalize_record(self):
-        pass
+    def finalize_record(self, errors=None):
+        "Update log at conclusion of report execution to indicate success/failure."
+        if errors:
+            data_to_update = {'completed_at': TimeHelper.now(string=False),
+                                'success': 0,
+                                'error_detail': errors}
+        else:
+            data_to_update = {'completed_at': TimeHelper.now(string=False),
+                                'success': 1}
+        self.report_log.update(data_to_update)
 
 class ReportActiveChecker(object):
 
-    def __init__(self, db, report_name):
-        self.db = db
+    def __init__(self, cm, report_name):
+        self.cm = cm
         self.report_name = report_name
         self.active = False
         self.check_if_active()
@@ -171,7 +209,8 @@ class ReportActiveChecker(object):
         statement = select([automated_reports.c.active])\
                         .where(automated_reports.c.report_name==self.report_name)
         try:
-            results = self.execute_query(sql=statement, increment_counter=False)
+            q = QueryGenerator(cm=self.cm, sql=statement)
+            results = q.execute()
             if results.result_data[0][0] == 1:
                 self.active = True
             else:

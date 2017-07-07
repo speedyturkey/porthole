@@ -1,6 +1,6 @@
-import unittest
+import os, unittest
 from porthole import ConnectionManager, config
-from porthole.report_components import ReportWriter
+from porthole.report_components import ReportWriter, ReportActiveChecker
 
 TEST_QUERY = "select count(*) from flarp;"
 default_db = config['Default'].get('database')
@@ -27,7 +27,7 @@ class TestReportWriter(unittest.TestCase):
         writer.create_worksheet_from_query(self.cm, "sheet1", sql=TEST_QUERY)
         writer.close_workbook()
         self.assertTrue(writer.record_count > 0)
-        self.assertFalse(writer.error_detail)
+        self.assertFalse(writer.error_log)
 
     def test_invalid_sheet_name_raises_error(self):
         "Should log an error if attempt to add worksheet with invalid name"
@@ -35,4 +35,19 @@ class TestReportWriter(unittest.TestCase):
         writer.build_file()
         writer.create_worksheet_from_query(self.cm, "sheet/1", sql=TEST_QUERY)
         writer.close_workbook()
-        self.assertTrue(writer.error_detail)
+        self.assertTrue(writer.error_log)
+
+class TestReportActiveChecker(unittest.TestCase):
+
+    def setUp(self):
+        self.cm = ConnectionManager(default_db)
+        self.cm.connect()
+
+    def tearDown(self):
+        self.cm.close()
+
+    def test_active(self):
+        active_checker = ReportActiveChecker(self.cm, 'test_report_active')
+        inactive_checker = ReportActiveChecker(self.cm, 'test_report_inactive')
+        self.assertTrue(active_checker)
+        self.assertFalse(inactive_checker)

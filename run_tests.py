@@ -8,7 +8,7 @@ from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_GenericReport import TestGenericReport
 from tests.test_Queries import TestQueries
-from tests.test_components import TestReportWriter
+from tests.test_components import TestReportWriter, TestReportActiveChecker
 # Query Handlers
 # Time Helper
 # XLSX
@@ -46,7 +46,8 @@ def main():
                             # TestRelatedRecord,
                             # TestGenericReport,
                             # TestQueries,
-                            TestReportWriter
+                            TestReportWriter,
+                            TestReportActiveChecker
                             ]
 
     # Setup
