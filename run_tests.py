@@ -8,6 +8,7 @@ from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_GenericReport import TestGenericReport
 from tests.test_Queries import TestQueries
+from tests.test_components import TestReportWriter
 # Query Handlers
 # Time Helper
 # XLSX
@@ -40,11 +41,12 @@ def main():
 
     # Select all of your test classes here.
     test_classes_to_run = [
-                            TestConnectionManager,
-                            TestSimpleWorkflow,
-                            TestRelatedRecord,
-                            TestGenericReport,
-                            TestQueries
+                            # TestConnectionManager,
+                            # TestSimpleWorkflow,
+                            # TestRelatedRecord,
+                            # TestGenericReport,
+                            # TestQueries,
+                            TestReportWriter
                             ]
 
     # Setup

@@ -1,36 +1,38 @@
+import unittest
+from porthole import ConnectionManager, config
 from porthole.report_components import ReportWriter
 
+TEST_QUERY = "select count(*) from flarp;"
+default_db = config['Default'].get('database')
+
 class TestReportWriter(unittest.TestCase):
+    def setUp(self):
+        self.cm = ConnectionManager(default_db)
+        self.cm.connect()
+
+    def tearDown(self):
+        self.cm.close()
 
     def test_create_workbook(self):
         writer = ReportWriter("Test Report")
+        print(writer.report_title)
         writer.build_file()
         self.assertIsNotNone(writer.workbook_builder)
         self.assertTrue(os.path.isfile(writer.report_file))
 
     def test_create_worksheet(self):
-        report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title = 'Test Report - Active'
-                                )
-        report.build_file()
-        self.assertEqual(report.record_count, 0)
-        report.create_worksheet_from_query(sql=TEST_QUERY,
-                                            sheet_name='Sheet1')
-        report.close_workbook()
-        self.assertTrue(report.record_count > 0)
-        self.assertTrue(report.error_detail == [])
-        report.finalize_log_record()
+        writer = ReportWriter("Test Report")
+        writer.build_file()
+        self.assertEqual(writer.record_count, 0)
+        writer.create_worksheet_from_query(self.cm, "sheet1", sql=TEST_QUERY)
+        writer.close_workbook()
+        self.assertTrue(writer.record_count > 0)
+        self.assertFalse(writer.error_detail)
 
     def test_invalid_sheet_name_raises_error(self):
         "Should log an error if attempt to add worksheet with invalid name"
-        report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title = 'Test Report - Active'
-                                )
-        report.build_file()
-        report.create_worksheet_from_query(query_file='test_report_query',
-                                            sheet_name='Sheet/1')
-        report.close_workbook()
-        self.assertFalse(report.error_detail == [])
-        report.finalize_log_record()
+        writer = ReportWriter("Test Report")
+        writer.build_file()
+        writer.create_worksheet_from_query(self.cm, "sheet/1", sql=TEST_QUERY)
+        writer.close_workbook()
+        self.assertTrue(writer.error_detail)
