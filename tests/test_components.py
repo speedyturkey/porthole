@@ -1,6 +1,6 @@
 import os, unittest
 from porthole import ConnectionManager, config
-from porthole.report_components import ReportWriter, ReportActiveChecker
+from porthole.components import ReportWriter, ReportActiveChecker, RecipientsChecker
 
 TEST_QUERY = "select count(*) from flarp;"
 default_db = config['Default'].get('database')
@@ -51,3 +51,20 @@ class TestReportActiveChecker(unittest.TestCase):
         inactive_checker = ReportActiveChecker(self.cm, 'test_report_inactive')
         self.assertTrue(active_checker)
         self.assertFalse(inactive_checker)
+
+class TestRecipientsChecker(unittest.TestCase):
+
+    def setUp(self):
+        self.cm = ConnectionManager(default_db)
+        self.cm.connect()
+
+    def tearDown(self):
+        self.cm.close()
+
+    def test_get_recipients(self):
+        checker = RecipientsChecker(cm=self.cm, report_name='test_report_active')
+        checker.assertFalse(checker.to_recipients)
+        checker.assertFalse(checker.cc_recipients)
+        checker.get_recipients()
+        checker.assertTrue(checker.to_recipients)
+        checker.assertTrue(checker.cc_recipients)

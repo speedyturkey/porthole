@@ -1,21 +1,18 @@
 import sys
 import os.path
-from sqlalchemy import select
 from .app import config
-from .models import (metadata,
-                    automated_reports,
-                    automated_report_contacts,
-                    automated_report_recipients,
-                    report_logs)
-from .connections import ConnectionManager
-from .related_record import RelatedRecord
+from .connections import ConnectionPool
 from .mailer import Mailer
-from .queries import QueryGenerator, QueryReader
-from .xlsx import WorkbookBuilder
+from .components import (DatabaseLogger,
+                                Loggable,
+                                RecipientsChecker,
+                                ReportActiveChecker,
+                                ReportErrorNotifier,
+                                ReportWriter)
 from . import TimeHelper
 
 
-class GenericReport():
+class GenericReport(Loggable):
     """A generic report object to be used to facilitate
     easy setup and configuration of new automated reports.
 
@@ -86,86 +83,65 @@ class GenericReport():
         # -----------------------------------------
         self.send_if_blank = True
         self.record_count = 0
-        self.workbook = None
         self.attachments = []
-        self.error_detail = []
+        self.error_log = []
         self.to_recipients = []
         self.cc_recipients = []
         self.email_sent = False
+        self.failure_notification_sent = False
         self.file_path = config['Default'].get('base_file_path')
         self.default_db = config['Default'].get('database')
-        self.notification_recipient = config['Default'].get('notification_recipient')
-        self.default_cm = ConnectionManager(self.default_db)
-        self.default_cm.connect()
-        self.active = self.check_if_active()
-        self.create_log_record()
+        self.conns = ConnectionPool([self.default_db])
+        self.check_if_active()
+        if self.active:
+            self.initialize_db_logger()
 
     def __del__(self):
         try:
-            self.default_cm.close()
+            self.conns.close_all()
         except:
             pass
 
-    def create_log_record(self):
-        """Inserts new log record into default report logging table
-        using RelatedRecord and saves instance of RelatedRecord for updating
-        later on with results of report execution.
-        """
-        if self.active and self.logging_enabled:
-            report_log = RelatedRecord(self.default_cm, 'report_logs')
-            report_log.insert({'report_name': self.report_name,
-                                'started_at': TimeHelper.now(string=False)})
-            self.report_log = report_log
+    def initialize_db_logger(self):
+        self.db_logger = DatabaseLogger( cm=self.get_conn(self.default_db),
+                                         report_name=self.report_name)
+        self.db_logger.create_record()
 
-    def finalize_log_record(self):
-        "Update log at conclusion of report execution to indicate success/failure."
-        if self.logging_enabled:
-            if self.error_detail:
-                errors = "; ".join(self.error_detail).replace("'", "")
-                data_to_update = {'completed_at': TimeHelper.now(string=False),
-                                    'success': 0,
-                                    'error_detail': errors}
-            else:
-                data_to_update = {'completed_at': TimeHelper.now(string=False),
-                                    'success': 1}
-        self.report_log.update(data_to_update)
+    def check_if_active(self):
+        self.active = ReportActiveChecker(  cm=self.get_conn(self.default_db),
+                                            report_name=self.report_name)
 
-    def connect_to(self, db=None):
-        """
-        Args:
-            db          (str): Optional. Name of database to connec to.
-                            If not provided, default ConnectionManager is
-                            returned. Otherwise, a new connection is made.
+    def get_conn(self, db):
+        return self.conns.pool.get(db)
 
-        Returns connected ConnectionManager to selected database.
-        """
-        if not db:
-            return self.default_cm
-        try:
-            cm = ConnectionManager(db=db)
-            cm.connect()
-            return cm
-        except:
-            self.log_error_detail("Unable to connect to database {}".format(db))
+    def add_conn(self, db):
+        return self.conns.add_connection(db)
+
+    def build_file(self):
+        report_writer = ReportWriter(self.report_name)
+        report_writer.build_file()
+        self.attachments.append(report_writer.report_file)
+        self.report_writer = report_writer
+
+    def create_worksheet_from_query(self,
+                                    sheet_name,
+                                    db=None,
+                                    query={},
+                                    sql=None):
+        if db is None:
+            db = self.default_db
+        cm = self.add_conn(db)
+        self.report_writer.create_worksheet_from_query(cm=cm,
+                                                        sheet_name=sheet_name,
+                                                        query=query,
+                                                        sql=sql)
 
     def get_recipients(self):
         "Performs lookup in database for report recipients based on report name."
-        statement = select([automated_report_contacts.c.email_address,
-                            automated_report_recipients.c.recipient_type])\
-                        .select_from(automated_reports\
-                        .join(automated_report_recipients)\
-                        .join(automated_report_contacts))\
-                        .where(automated_reports.c.report_name==self.report_name)
-        results = self.execute_query(sql=statement, increment_counter=False)
 
-        for recipient in results.result_data:
-            if recipient.recipient_type == 'to':
-                self.to_recipients.append(recipient.email_address)
-            else:
-                self.cc_recipients.append(recipient.email_address)
-
-        if not self.to_recipients:
-            raise KeyError("No primary recipient found for the provided report.")
+        checker = RecipientsChecker( cm=self.get_conn(self.default_db),
+                                     report_name=self.report_name)
+        self.to_recipients, self.cc_recipients = checker.get_recipients()
 
     def build_email(self):
         "Instantiates Mailer object using provided parameters."
@@ -181,7 +157,7 @@ class GenericReport():
 
     def check_whether_to_send_email(self):
         "Determines whether email should be sent based given errors, settings, and result count."
-        if self.error_detail:
+        if self.error_log:
             return False
         elif not self.send_if_blank and self.record_count == 0:
             return False
@@ -194,7 +170,7 @@ class GenericReport():
             self.email.send_email()
             self.email_sent = True
         except:
-            self.log_error_detail("Unable to send email")
+            self.log_error("Unable to send email")
 
     def build_and_send_email(self):
         """If email should be sent, builds email object and sends email."""
@@ -209,13 +185,21 @@ class GenericReport():
         this method executes and finalizes the report,
         ensures errors are handled, and performs cleanup.
         """
-        self.close_workbook()
+        self.report_writer.close_workbook()
         if self.active:
             self.build_and_send_email()
-            self.finalize_log_record()
-        self.default_cm.close()
-        if self.error_detail:
+            self.db_logger.finalize_record()
+        if self.error_log:
             self.send_failure_notification()
+        self.conns.close_all()
+
+    def send_failure_notification(self):
+        notifier = ReportErrorNotifier( report_title=self.report_title,
+                                        error_log=self.error_log)
+        notifier.send_log_by_email()
+        if notifier.notified:
+            self.failure_notification_sent = True
+
 
 if __name__ == '__main__':
     pass

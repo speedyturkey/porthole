@@ -41,11 +41,11 @@ def main():
 
     # Select all of your test classes here.
     test_classes_to_run = [
-                            # TestConnectionManager,
-                            # TestSimpleWorkflow,
-                            # TestRelatedRecord,
-                            # TestGenericReport,
-                            # TestQueries,
+                            TestConnectionManager,
+                            TestSimpleWorkflow,
+                            TestRelatedRecord,
+                            TestGenericReport,
+                            TestQueries,
                             TestReportWriter,
                             TestReportActiveChecker
                             ]
@@ -67,4 +67,4 @@ def main():
 if __name__ == '__main__':
     setup_test_db()
     main()
-    # teardown_test_db()
+    teardown_test_db()

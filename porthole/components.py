@@ -8,6 +8,7 @@ from .models import (metadata,
                     automated_report_recipients,
                     report_logs)
 from .mailer import Mailer
+from .related_record import RelatedRecord
 from .queries import QueryGenerator
 from .xlsx import WorkbookBuilder
 
@@ -37,13 +38,13 @@ class ReportWriter(Loggable):
     """
     #TODO: Think of a better name for this class.
 
-    def __init__(self, report_title, error_logger=None):
+    def __init__(self, report_title):
         self.report_title = report_title
-        self.filename = None
+        self.report_file = None
         self.file_path = config['Default'].get('base_file_path')
+        self.workbook_builder = None
         self.record_count = 0
         self.error_log = []
-        self.error_logger = error_logger
 
     def build_file(self):
         """
@@ -66,10 +67,11 @@ class ReportWriter(Loggable):
         if self.workbook_builder:
             self.workbook_builder.workbook.close()
 
-    def execute_query(self, cm, query_file=None, query_params=None, sql=None, increment_counter=True):
+    def execute_query(self, cm, query={}, sql=None, increment_counter=True):
         """
         Args:
             cm              (ConnectionManager): Object which contains connection to desired database.
+            TODO - These are outdated.
             query_file      (str): Optional. Name of file to be read without extension.
             query_params    (dict): Optional. Contains parameter names and values if applicable.
                                 Should only be included along with query_file containing
@@ -81,7 +83,9 @@ class ReportWriter(Loggable):
 
         Executes SQL and returns QueryResult object, containing data and metadata.
         """
-        q = QueryGenerator(cm=cm, filename=query_file, params=query_params, sql=sql)
+        filename = query.get('filename')
+        params = query.get('params')
+        q = QueryGenerator(cm=cm, filename=filename, params=params, sql=sql)
         try:
             results = q.execute()
             if increment_counter:
@@ -100,10 +104,11 @@ class ReportWriter(Loggable):
         except:
             self.log_error("Unable to add worksheet {}".format(sheet_name))
 
-    def create_worksheet_from_query(self, cm, sheet_name, query_file=None, query_params=None, sql=None):
+    def create_worksheet_from_query(self, cm, sheet_name, query={}, sql=None):
         """
         Args:
             sheet_name      (str): The name of the worksheet to be created.
+            TODO - These are outdated.
             query_file      (str): Optional. Name of file to be read without extension.
             query_params    (dict): Optional. Contains parameter names and values if applicable.
                                 Should only be included along with query_file containing
@@ -114,32 +119,19 @@ class ReportWriter(Loggable):
 
         Executes a query and uses results to add worksheet to ReportWriter.workbook_builder.
         """
-        results = self.execute_query(cm=cm, query_file=query_file, query_params=query_params, sql=sql)
+        results = self.execute_query(cm=cm, query=query, sql=sql)
         self.make_worksheet(sheet_name=sheet_name, query_results=results)
 
 
-class ReportErrorLogger(object):
+class ReportErrorNotifier(object):
 
-    def __init__(self, report_title):
+    def __init__(self, report_title, error_log):
         self.report_title = report_title
         self.notification_recipient = config['Default'].get('notification_recipient')
-        self.buffer = []
+        self.error_log = error_log
         self.notified = False
 
-    def log_error(self, msg):
-        error_value = sys.exc_info()[1]
-        log_record = msg + '; ' + str(error_value) + ': ' + str(error_value.__doc__)
-        self.buffer.append(log_record)
-
-    def flush(self):
-        if self.should_flush():
-            self.send_buffer_by_email()
-            self.buffer[:] = []
-
-    def should_flush(self):
-        return len(self.buffer) > 0
-
-    def send_buffer_by_email(self):
+    def send_log_by_email(self):
         email = Mailer()
         email.recipients = [self.notification_recipient]
         email.cc_recipients = ['']
@@ -154,7 +146,7 @@ class ReportErrorLogger(object):
 
 The following errors were logged:\n""".format(self.report_title)
         msg = msg.format(self.report_title)
-        for i, error in enumerate(self.buffer, 1):
+        for i, error in enumerate(self.error_log, 1):
             msg += str(i) + '. ' + error + '\n'
         return msg
 
@@ -191,7 +183,7 @@ class DatabaseLogger(object):
                                 'success': 1}
         self.report_log.update(data_to_update)
 
-class ReportActiveChecker(object):
+class ReportActiveChecker(Loggable):
 
     def __init__(self, cm, report_name):
         self.cm = cm
@@ -216,5 +208,31 @@ class ReportActiveChecker(object):
             else:
                 self.active = False
         except IndexError:
-            self.log_error_detail("Report does not exist.")
+            self.log_error("Report does not exist.")
             raise Exception("Report does not exist.")
+
+class RecipientsChecker(object):
+    def __init__(self, cm, report_name):
+        self.cm = cm
+        self.report_name = report_name
+        self.to_recipients = []
+        self.cc_recipients = []
+
+    def get_recipients(self):
+        "Performs lookup in database for report recipients based on report name."
+        statement = select([automated_report_contacts.c.email_address,
+                            automated_report_recipients.c.recipient_type])\
+                        .select_from(automated_reports\
+                        .join(automated_report_recipients)\
+                        .join(automated_report_contacts))\
+                        .where(automated_reports.c.report_name==self.report_name)
+        q = QueryGenerator(cm=self.cm, sql=statement)
+        results = q.execute()
+        for recipient in results.result_data:
+            if recipient.recipient_type == 'to':
+                self.to_recipients.append(recipient.email_address)
+            else:
+                self.cc_recipients.append(recipient.email_address)
+        if not self.to_recipients:
+            raise KeyError("No primary recipient found for the provided report.")
+        return self.to_recipients, self.cc_recipients
