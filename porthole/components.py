@@ -14,9 +14,26 @@ from .xlsx import WorkbookBuilder
 
 class Loggable(object):
     """
-    Inherit from this class to implement basic error logging.
+    Inherit from this class to implement basic error logging. If derived class
+    overrides __init__, it must invoke Loggable.__init__() or super().__init__().
+    Args:
+        log_to  (list): Specify where logged errors should go. Intended to route
+            errors from several different types of Loggable objects to one
+            place.
+    Usage
 
+    class Component(Loggable):
+        def __init__(self, log_to=[]):
+            super().__init__(log_to=log_to)
+
+    class Report(object):
+        def __init__(self):
+            self.error_log = []
+            self.component = Component(log_to=self.error_log)
     """
+    def __init__(self, log_to=[]):
+        self.error_log = log_to
+
     def log_error(self, msg=None):
         """
         Args:
@@ -38,13 +55,13 @@ class ReportWriter(Loggable):
     """
     #TODO: Think of a better name for this class.
 
-    def __init__(self, report_title):
+    def __init__(self, report_title, log_to=[]):
         self.report_title = report_title
         self.report_file = None
         self.file_path = config['Default'].get('base_file_path')
         self.workbook_builder = None
         self.record_count = 0
-        self.error_log = []
+        super().__init__(log_to=log_to)
 
     def build_file(self):
         """
@@ -70,16 +87,17 @@ class ReportWriter(Loggable):
     def execute_query(self, cm, query={}, sql=None, increment_counter=True):
         """
         Args:
-            cm              (ConnectionManager): Object which contains connection to desired database.
-            TODO - These are outdated.
-            query_file      (str): Optional. Name of file to be read without extension.
-            query_params    (dict): Optional. Contains parameter names and values if applicable.
-                                Should only be included along with query_file containing
-                                parameter placeholders.
+            cm              (ConnectionManager):
+                            Object which contains connection to desired database.
+            sheet_name      (str): The name of the worksheet to be created.
+            query           (dict): Optional. May contain filename and params for a query
+                                to be executed. If included, filename is required.
+                    filename      (str): Name of file to be read without extension.
+                    params        (dict): Optional. Contains parameter names and values,
+                                if applicable. Should only be included along with
+                                query_file containing parameter placeholders.
             sql             (str or sqlalchemy.sql.selectable.Select statement):
                                 Optional. A SQL query ready for execution.
-            increment_counter (boolean): Defaults to True. Increments GenericReport.record_count
-                                with number of records in returned result set.
 
         Executes SQL and returns QueryResult object, containing data and metadata.
         """
@@ -107,21 +125,121 @@ class ReportWriter(Loggable):
     def create_worksheet_from_query(self, cm, sheet_name, query={}, sql=None):
         """
         Args:
+            cm              (ConnectionManager):
+                            Object which contains connection to desired database.
             sheet_name      (str): The name of the worksheet to be created.
-            TODO - These are outdated.
-            query_file      (str): Optional. Name of file to be read without extension.
-            query_params    (dict): Optional. Contains parameter names and values if applicable.
-                                Should only be included along with query_file containing
-                                parameter placeholders.
+            query           (dict): Optional. May contain filename and params for a query
+                                to be executed. If included, filename is required.
+                    filename      (str): Name of file to be read without extension.
+                    params        (dict): Optional. Contains parameter names and values,
+                                if applicable. Should only be included along with
+                                query_file containing parameter placeholders.
             sql             (str or sqlalchemy.sql.selectable.Select statement):
                                 Optional. A SQL query ready for execution.
-            cm              (ConnectionManager): Object which contains connection to desired database.
 
         Executes a query and uses results to add worksheet to ReportWriter.workbook_builder.
         """
         results = self.execute_query(cm=cm, query=query, sql=sql)
         self.make_worksheet(sheet_name=sheet_name, query_results=results)
 
+
+class DatabaseLogger(Loggable):
+    """
+    Don't want to log if report not active,
+    or if logging is not enabled.
+    """
+    def __init__(self, cm, report_name, log_to=[], log_table='report_logs'):
+        self.cm = cm
+        self.report_name = report_name
+        self.log_table = log_table
+        super().__init__(log_to=log_to)
+
+    def create_record(self):
+        """
+        Inserts new log record into default report logging table
+        using RelatedRecord and saves instance of RelatedRecord for updating
+        later on with results of report execution.
+        """
+        report_log = RelatedRecord(self.cm, self.log_table)
+        try:
+            report_log.insert({'report_name': self.report_name,
+                                'started_at': TimeHelper.now(string=False)})
+        except:
+            self.log_error("Unable to create log record.")
+        self.report_log = report_log
+
+    def finalize_record(self, errors=None):
+        "Update log at conclusion of report execution to indicate success/failure."
+        if errors:
+            data_to_update = {'completed_at': TimeHelper.now(string=False),
+                                'success': 0,
+                                'error_detail': errors}
+        else:
+            data_to_update = {'completed_at': TimeHelper.now(string=False),
+                                'success': 1}
+        try:
+            self.report_log.update(data_to_update)
+        except:
+            self.log_error("Unable to finalize log record.")
+
+class ReportActiveChecker(Loggable):
+
+    def __init__(self, cm, report_name, log_to=[]):
+        self.cm = cm
+        self.report_name = report_name
+        self.active = False
+        super().__init__(log_to=log_to)
+        self.check_if_active()
+
+    def __bool__(self):
+        return self.active
+
+    def check_if_active(self):
+        """Queries database to determine if the 'active' attribute for this report
+        is set to 1 (active) or 0 (inactive).
+        """
+        statement = select([automated_reports.c.active])\
+                        .where(automated_reports.c.report_name==self.report_name)
+        try:
+            q = QueryGenerator(cm=self.cm, sql=statement)
+            results = q.execute()
+            if results.result_data[0][0] == 1:
+                self.active = True
+            else:
+                self.active = False
+        except IndexError:
+            self.log_error("Report does not exist.")
+            raise Exception("Report does not exist.")
+
+class RecipientsChecker(Loggable):
+    def __init__(self, cm, report_name, log_to=[]):
+        self.cm = cm
+        self.report_name = report_name
+        self.to_recipients = []
+        self.cc_recipients = []
+        super().__init__(log_to=log_to)
+
+    def get_recipients(self):
+        "Performs lookup in database for report recipients based on report name."
+        statement = select([automated_report_contacts.c.email_address,
+                            automated_report_recipients.c.recipient_type])\
+                        .select_from(automated_reports\
+                        .join(automated_report_recipients)\
+                        .join(automated_report_contacts))\
+                        .where(automated_reports.c.report_name==self.report_name)
+        try:
+            q = QueryGenerator(cm=self.cm, sql=statement)
+            results = q.execute()
+            for recipient in results.result_data:
+                if recipient.recipient_type == 'to':
+                    self.to_recipients.append(recipient.email_address)
+                else:
+                    self.cc_recipients.append(recipient.email_address)
+        except:
+            self.log_error("Error getting recipients for {}".format(self.report_name))
+        if not self.to_recipients:
+            raise KeyError("No primary recipient found for the provided report.")
+        return self.to_recipients, self.cc_recipients
 
 class ReportErrorNotifier(object):
 
@@ -149,90 +267,3 @@ The following errors were logged:\n""".format(self.report_title)
         for i, error in enumerate(self.error_log, 1):
             msg += str(i) + '. ' + error + '\n'
         return msg
-
-
-class DatabaseLogger(object):
-    """
-    Don't want to log if report not active,
-    or if logging is not enabled.
-    """
-    def __init__(self, cm, report_name, log_table='report_logs'):
-        self.cm = cm
-        self.report_name = report_name
-        self.log_table = log_table
-
-    def create_record(self):
-        """
-        Inserts new log record into default report logging table
-        using RelatedRecord and saves instance of RelatedRecord for updating
-        later on with results of report execution.
-        """
-        report_log = RelatedRecord(self.cm, self.log_table)
-        report_log.insert({'report_name': self.report_name,
-                            'started_at': TimeHelper.now(string=False)})
-        self.report_log = report_log
-
-    def finalize_record(self, errors=None):
-        "Update log at conclusion of report execution to indicate success/failure."
-        if errors:
-            data_to_update = {'completed_at': TimeHelper.now(string=False),
-                                'success': 0,
-                                'error_detail': errors}
-        else:
-            data_to_update = {'completed_at': TimeHelper.now(string=False),
-                                'success': 1}
-        self.report_log.update(data_to_update)
-
-class ReportActiveChecker(Loggable):
-
-    def __init__(self, cm, report_name):
-        self.cm = cm
-        self.report_name = report_name
-        self.active = False
-        self.check_if_active()
-
-    def __bool__(self):
-        return self.active
-
-    def check_if_active(self):
-        """Queries database to determine if the 'active' attribute for this report
-        is set to 1 (active) or 0 (inactive).
-        """
-        statement = select([automated_reports.c.active])\
-                        .where(automated_reports.c.report_name==self.report_name)
-        try:
-            q = QueryGenerator(cm=self.cm, sql=statement)
-            results = q.execute()
-            if results.result_data[0][0] == 1:
-                self.active = True
-            else:
-                self.active = False
-        except IndexError:
-            self.log_error("Report does not exist.")
-            raise Exception("Report does not exist.")
-
-class RecipientsChecker(object):
-    def __init__(self, cm, report_name):
-        self.cm = cm
-        self.report_name = report_name
-        self.to_recipients = []
-        self.cc_recipients = []
-
-    def get_recipients(self):
-        "Performs lookup in database for report recipients based on report name."
-        statement = select([automated_report_contacts.c.email_address,
-                            automated_report_recipients.c.recipient_type])\
-                        .select_from(automated_reports\
-                        .join(automated_report_recipients)\
-                        .join(automated_report_contacts))\
-                        .where(automated_reports.c.report_name==self.report_name)
-        q = QueryGenerator(cm=self.cm, sql=statement)
-        results = q.execute()
-        for recipient in results.result_data:
-            if recipient.recipient_type == 'to':
-                self.to_recipients.append(recipient.email_address)
-            else:
-                self.cc_recipients.append(recipient.email_address)
-        if not self.to_recipients:
-            raise KeyError("No primary recipient found for the provided report.")
-        return self.to_recipients, self.cc_recipients

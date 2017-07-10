@@ -33,8 +33,8 @@ class GenericReport(Loggable):
                             )
     report.build_file()
     report.create_worksheet_from_query(
-                                        query={'name': 'test_query'},
-                                        sheet_name='Sheet1'
+                                        sheet_name='Sheet1',
+                                        query={'filename': 'test_query'}
                                         )
     report.subject = "Today's Test Report"
     report.message = "Attached is the latest report"
@@ -104,12 +104,14 @@ class GenericReport(Loggable):
 
     def initialize_db_logger(self):
         self.db_logger = DatabaseLogger( cm=self.get_conn(self.default_db),
-                                         report_name=self.report_name)
+                                         report_name=self.report_name,
+                                         log_to=self.error_log)
         self.db_logger.create_record()
 
     def check_if_active(self):
         self.active = ReportActiveChecker(  cm=self.get_conn(self.default_db),
-                                            report_name=self.report_name)
+                                            report_name=self.report_name,
+                                            log_to=self.error_log)
 
     def get_conn(self, db):
         return self.conns.pool.get(db)
@@ -118,7 +120,7 @@ class GenericReport(Loggable):
         return self.conns.add_connection(db)
 
     def build_file(self):
-        report_writer = ReportWriter(self.report_name)
+        report_writer = ReportWriter(report_title=self.report_title, log_to=self.error_log)
         report_writer.build_file()
         self.attachments.append(report_writer.report_file)
         self.report_writer = report_writer
@@ -140,7 +142,8 @@ class GenericReport(Loggable):
         "Performs lookup in database for report recipients based on report name."
 
         checker = RecipientsChecker( cm=self.get_conn(self.default_db),
-                                     report_name=self.report_name)
+                                     report_name=self.report_name,
+                                     log_to=self.error_log)
         self.to_recipients, self.cc_recipients = checker.get_recipients()
 
     def build_email(self):

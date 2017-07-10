@@ -65,7 +65,10 @@ class ConnectionPool(object):
             cm = ConnectionManager(db)
             cm.connect()
             self.pool[db] = cm
-            return self.pool[db]
+        return self.get(db)
+
+    def get(self, db):
+        return self.pool.get(db)
 
     def close(self, db):
         self.pool[db].close()
