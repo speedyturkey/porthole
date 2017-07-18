@@ -52,11 +52,8 @@ def main():
 
     # Setup
     loader = unittest.TestLoader()
-    suites_list = []
-    # Process and load test suites
-    for test_class in test_classes_to_run:
-        suite = loader.loadTestsFromTestCase(test_class)
-        suites_list.append(suite)
+    # # Process and load test suites
+    suites_list = [loader.loadTestsFromTestCase(test_class) for test_class in test_classes_to_run]
     # Test all of the things!
     executive_test_suite = unittest.TestSuite(suites_list)
     unittest.TextTestRunner(verbosity=1).run(executive_test_suite)
