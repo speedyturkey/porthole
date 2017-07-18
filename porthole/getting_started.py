@@ -2,7 +2,7 @@ import os
 from configparser import ConfigParser
 from collections import OrderedDict
 from .app import config
-from .connection_manager import ConnectionManager
+from .connections import ConnectionManager
 from .models import metadata
 
 
@@ -30,6 +30,8 @@ Email = OrderedDict([('username', NONE),
                         ('signature', NONE)])
 
 Logging = OrderedDict([('server', "FALSE"),
+                        ('log_to_file', "FALSE"),
+                        ('logfile', NONE),
                         ('logging_db', NONE)])
 
 Debug = OrderedDict([('debug_mode', "FALSE"),

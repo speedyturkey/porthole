@@ -7,7 +7,7 @@ automated_report_recipients
 
 from porthole import config
 from porthole.models import metadata
-from porthole.connection_manager import ConnectionManager
+from porthole.connections import ConnectionManager
 
 def run():
     db = config['Default']['database']
