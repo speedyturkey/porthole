@@ -30,6 +30,8 @@ Email = OrderedDict([('username', NONE),
                         ('signature', NONE)])
 
 Logging = OrderedDict([('server', "FALSE"),
+                        ('log_to_file', "FALSE"),
+                        ('logfile', NONE),
                         ('logging_db', NONE)])
 
 Debug = OrderedDict([('debug_mode', "FALSE"),
