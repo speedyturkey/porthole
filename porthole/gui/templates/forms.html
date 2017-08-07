@@ -15,6 +15,9 @@
         <div class="col-sm-7">
           <a  href="#" id="edit-general-settings">Edit Settings</a>
         </div>
+        <!-- <div class="col-sm-3">
+          <a  href="#" id="cancel-general">Cancel</a>
+        </div> -->
       </div>
       <hr />
       <div class="form-group row">
@@ -24,7 +27,7 @@
         <!-- <div class="col-sm-3">
           {{ all_config_options["Default"]["base_file_path"] }}
         </div> -->
-        <label for="default_base_file_path" class="col-sm-5 col-form-lable">Reports Folder</label>
+        <label for="default_base_file_path" class="col-sm-5 col-form-label">Reports Folder</label>
         <div class="col-sm-7">
           {{ config_form.default_base_file_path(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -44,7 +47,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Default"]["query_path"] }}
         </div> -->
-        <label for="default_query_path" class="col-sm-5 col-form-lable">Queries Folder</label>
+        <label for="default_query_path" class="col-sm-5 col-form-label">Queries Folder</label>
         <div class="col-sm-7">
           {{ config_form.default_query_path(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -61,7 +64,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Default"]["database"] }}
         </div> -->
-        <label for="default_database" class="col-sm-5 col-form-lable">Default Database</label>
+        <label for="default_database" class="col-sm-5 col-form-label">Default Database</label>
         <div class="col-sm-7">
           {{ config_form.default_database(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -78,7 +81,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Default"]["notification_recipient"] }}
         </div> -->
-        <label for="default_notification_recipient" class="col-sm-5 col-form-lable">Default Email Recipient</label>
+        <label for="default_notification_recipient" class="col-sm-5 col-form-label">Default Email Recipient</label>
         <div class="col-sm-7">
           {{ config_form.default_notification_recipient(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -101,7 +104,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Email"]["username"] }}
         </div> -->
-        <label for="email_username" class="col-sm-5 col-form-lable">Email Address</label>
+        <label for="email_username" class="col-sm-5 col-form-label">Email Address</label>
         <div class="col-sm-7">
           {{ config_form.email_username(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -118,7 +121,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Email"]["password"] }}
         </div> -->
-        <label for="email_password" class="col-sm-5 col-form-lable">Password</label>
+        <label for="email_password" class="col-sm-5 col-form-label">Password</label>
         <div class="col-sm-7">
           {{ config_form.email_password(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -135,7 +138,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Email"]["host"] }}
         </div> -->
-        <label for="email_host" class="col-sm-5 col-form-lable">Host Address</label>
+        <label for="email_host" class="col-sm-5 col-form-label">Host Address</label>
         <div class="col-sm-7">
           {{ config_form.email_host(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -145,16 +148,22 @@
           </ul>
         </div>
       </div>
-      <div class="form-group row">
-        <!-- <div class="col-sm-4">
-          {{ config_form.email_disabled.label }}
-        </div> -->
-        <!-- <div class="col-sm-4">
-          {{ all_config_options["Email"]["disabled"] }}
-        </div> -->
-        <label for="email_disabled" class="col-sm-5 col-form-lable">Email Disabled</label>
+      <div class="form-group row ">
+        {% if all_config_options['Email']['disabled'] == 'Yes'%}
+          {% set y_email_checked = 'checked' %}
+        {% elif all_config_options['Email']['disabled'] == 'No'%}
+          {% set n_email_checked = 'checked' %}
+        {% endif %}
+        <label for="email_disabled" class="col-sm-5 col-form-label">Email Disabled</label>
         <div class="col-sm-7">
-          {{ config_form.email_disabled(class_="form-control gen-set-field", disabled=True) }}
+          <div class='form-check disabled'>
+            <label class="form-check-label">
+              <input type="radio" class="form-check-input gen-set-field" name="email_disabled" id="email_disabled_y" value="Yes" disabled {{ y_email_checked }}/>
+              Yes
+              <input type="radio" class="form-check-input gen-set-field" name="email_disabled" id="email_disabled_n" value="No" disabled {{ n_email_checked }}/>
+              No
+            </label>
+          </div>
           <ul>
             {% for error in config_form.email_disabled.errors %}
               <li>{{ error}}</li>
@@ -169,7 +178,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Email"]["signature"] }}
         </div> -->
-        <label for="email_signature" class="col-sm-5 col-form-lable">Email Signature</label>
+        <label for="email_signature" class="col-sm-5 col-form-label">Email Signature</label>
         <div class="col-sm-7">
           {{ config_form.email_signature(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -191,7 +200,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Logging"]["server"] }}
         </div> -->
-        <label for="logging_server" class="col-sm-5 col-form-lable">Logging Server Address</label>
+        <label for="logging_server" class="col-sm-5 col-form-label">Logging Server Address</label>
         <div class="col-sm-7">
           {{ config_form.logging_server(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -208,7 +217,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Logging"]["db"] }}
         </div> -->
-        <label for="logging_db" class="col-sm-5 col-form-lable">Logging Database Schema</label>
+        <label for="logging_db" class="col-sm-5 col-form-label">Logging Database Schema</label>
         <div class="col-sm-7">
           {{ config_form.logging_db(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -225,15 +234,21 @@
       <h4>Debug Settings</h4>
       <hr />
       <div class="form-group row">
-        <!-- <div class="col-sm-4">
-          {{ config_form.debug_mode.label }}
-        </div> -->
-        <!-- <div class="col-sm-4">
-          {{ all_config_options["Debug"]["debug_mode"] }}
-        </div> -->
-        <label for="debug_mode" class="col-sm-5 col-form-lable">Debug Mode</label>
+        {% if all_config_options['Debug']['debug_mode'] == 'Yes'%}
+          {% set y_debug_checked = 'checked' %}
+        {% elif all_config_options['Debug']['debug_mode'] == 'No'%}
+          {% set n_debug_checked = 'checked' %}
+        {% endif %}
+        <label for="debug_mode" class="col-sm-5 col-form-label">Debug Mode</label>
         <div class="col-sm-7">
-          {{ config_form.debug_mode(class_="form-control gen-set-field", disabled=True) }}
+          <div class='form-check disabled'>
+            <label class="form-check-label">
+              <input type="radio" class="form-check-input gen-set-field" name="debug_mode" id="debug_mode_y" value="Yes" disabled {{ y_debug_checked }}/>
+              Yes
+              <input type="radio" class="form-check-input gen-set-field" name="debug_mode" id="debug_mode_n" value="No" disabled {{ n_debug_checked }}/>
+              No
+            </label>
+          </div>
           <ul>
             {% for error in config_form.debug_mode.errors %}
               <li>{{ error}}</li>
@@ -248,7 +263,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Debug"]["debug_recipients"] }}
         </div> -->
-        <label for="debug_recipients" class="col-sm-5 col-form-lable">Debug Email Recipients</label>
+        <label for="debug_recipients" class="col-sm-5 col-form-label">Debug Email Recipients</label>
         <div class="col-sm-7">
           {{ config_form.debug_recipients(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -271,7 +286,7 @@
         <!-- <div class="col-sm-4">
           {{ all_config_options["Admin"]["admin_email"] }}
         </div> -->
-        <label for="admin_email" class="col-sm-5 col-form-lable">Admin Email Recipient</label>
+        <label for="admin_email" class="col-sm-5 col-form-label">Admin Email Recipient</label>
         <div class="col-sm-7">
           {{ config_form.admin_email(class_="form-control gen-set-field", disabled=True) }}
           <ul>
@@ -285,8 +300,8 @@
         <div class="col-md-5">
 
         </div>
-        <div class=" col-sm-7">
-          {{ config_form.config_submit(class_="btn btn-primary") }}
+        <div class=" col-sm-3">
+          {{ config_form.config_submit(class_="btn btn-primary gen-set-field", disabled=True) }}
         </div>
       </div>
     </div>

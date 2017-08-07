@@ -1,6 +1,6 @@
 from flask import Flask, render_template, flash
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, PasswordField, RadioField
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
@@ -27,8 +27,8 @@ def edit_config(dict):
         parser.set('Email', 'password', dict['email_password'])
     if 'email_host' in dict and dict['email_host'] != '':
         parser.set('Email', 'host', dict['email_host'])
-    if 'email_disabled' in dict and dict['email_disabled'] != '':
-        parser.set('Email', 'disabled', dict['email_disabled'])
+    if 'email_disabled' in dict and str(dict['email_disabled']) != '':
+        parser.set('Email', 'disabled', str(dict['email_disabled']))
     if 'email_signature' in dict and dict['email_signature'] != '':
         parser.set('Email', 'signature', dict['email_signature'])
     if 'logging_server' in dict and dict['logging_server'] != '':
@@ -92,9 +92,9 @@ class ConfigForm(FlaskForm):
     default_database = StringField('default_database')
     default_notification_recipient = StringField('default_notification_recipient')
     email_username = StringField('email_username')
-    email_password = StringField('email_password')
+    email_password = PasswordField('email_password')
     email_host = StringField('email_host')
-    email_disabled = StringField('email_disabled')
+    email_disabled = RadioField('email_disabled', choices=[('Yes','Yes'),('No','No')])
     email_signature = StringField('email_signature')
     logging_server = StringField('logging_server')
     logging_db = StringField('logging_db')
@@ -102,7 +102,6 @@ class ConfigForm(FlaskForm):
     debug_recipients = StringField('debug_recipients')
     admin_email = StringField('admin_email')
     config_submit = SubmitField('Save Settings')
-    config_cancel = SubmitField('Cancel')
 
 
 @app.route('/config', methods=['GET', 'POST'])
@@ -128,7 +127,7 @@ def config():
     if config_form.config_submit.data and config_form.validate():
         edit_config(config_form.data)
         flash('Settings Updated')
-        return render_template("forms.html", config_form=config_form, connection_form=connection_form, all_config_options=all_config_options)
+        return render_template("forms.html", config_form=config_form, connection_form=connection_form, all_config_options=read_config())
 
 
     if connection_form.connection_submit.data and connection_form.validate():
