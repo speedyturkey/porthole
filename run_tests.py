@@ -6,7 +6,7 @@ from tests.fixtures import test_metadata, create_fixtures
 from tests.test_ConnectionManager import TestConnectionManager
 from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
-from tests.test_GenericReport import TestGenericReport
+from tests.test_Reports import TestBasicReport, TestGenericReport
 from tests.test_Queries import TestQueries
 from tests.test_components import TestReportWriter, TestReportActiveChecker
 # Query Handlers
@@ -44,6 +44,7 @@ def main():
                             TestConnectionManager,
                             TestSimpleWorkflow,
                             TestRelatedRecord,
+                            TestBasicReport,
                             TestGenericReport,
                             TestQueries,
                             TestReportWriter,

@@ -8,7 +8,18 @@ Test email is not sent on failure.
 import os
 import sys
 import unittest
-from porthole import GenericReport
+from porthole import config, BasicReport, GenericReport
+
+class TestBasicReport(unittest.TestCase):
+    def test_basic_functionality(self):
+        report = BasicReport(report_title = 'Basic Report - Test')
+        report.build_file()
+        report.create_worksheet_from_query(sheet_name='Sheet1',
+                                            sql=TEST_QUERY)
+        report.to_recipients.append(config['Default']['notification_recipient'])
+        report.subject = 'Basic Report - Test'
+        report.message = 'Basic Report Test'
+        report.execute()
 
 class TestGenericReport(unittest.TestCase):
 
@@ -17,10 +28,7 @@ class TestGenericReport(unittest.TestCase):
                                 report_name='test_report_active'
                                 , report_title = 'Test Report - Active'
                                 )
-        self.assertIsInstance(report.db_logger.report_log.primary_key, int)
-        self.assertFalse(report.db_logger.report_log.updated)
-        report.db_logger.finalize_record()
-        self.assertTrue(report.db_logger.report_log.updated)
+        self.assertFalse(report.email_sent)
 
     def test_disable_logging(self):
         report = GenericReport(

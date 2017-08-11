@@ -11,6 +11,106 @@ from .components import (DatabaseLogger,
                                 ReportWriter)
 from . import TimeHelper
 
+class BasicReport(Loggable):
+    """
+    A basic report with bare minimum functionality.
+
+    Keyword arguments
+    :report_title: Used in the filename of the resulting report.
+
+    """
+    def __init__(self, report_title):
+        # -----------------------------------------
+        # Assign arguments to instance attributes.
+        # -----------------------------------------
+        self.report_title = report_title
+        # -----------------------------------------
+        # Setup configuration variables and defaults.
+        # By default, reports will be sent even if there are no results.
+        # This behavior can be overridden for individual reports. Record count
+        # initialized at 0, but incremented by execute_query.
+        # -----------------------------------------
+        self.attachments = []
+        self.error_log = []
+        self.to_recipients = []
+        self.cc_recipients = []
+        self.email_sent = False
+        self.file_path = config['Default'].get('base_file_path')
+        self.default_db = config['Default'].get('database')
+        self.conns = ConnectionPool([self.default_db])
+
+    def __del__(self):
+        try:
+            self.conns.close_all()
+        except:
+            pass
+
+    def get_conn(self, db):
+        return self.conns.pool.get(db)
+
+    def add_conn(self, db):
+        return self.conns.add_connection(db)
+
+    def build_file(self):
+        report_writer = ReportWriter(report_title=self.report_title, log_to=self.error_log)
+        report_writer.build_file()
+        self.attachments.append(report_writer.report_file)
+        self.report_writer = report_writer
+
+    def create_worksheet_from_query(self,
+                                    sheet_name,
+                                    db=None,
+                                    query={},
+                                    sql=None):
+        "Delegates functionality to ReportWriter."
+        if db is None:
+            db = self.default_db
+        cm = self.add_conn(db)
+        self.report_writer.create_worksheet_from_query(cm=cm,
+                                                        sheet_name=sheet_name,
+                                                        query=query,
+                                                        sql=sql)
+
+    def make_worksheet(self, sheet_name, query_results):
+        "Delegates functionality to ReportWriter."
+        self.report_writer.make_worksheet(sheet_name=sheet_name,
+                                            query_results=query_results)
+
+    def build_email(self):
+        "Instantiates Mailer object using provided parameters."
+        email = Mailer()
+        email.recipients = self.to_recipients
+        email.cc_recipients = self.cc_recipients
+        email.subject = self.subject
+        email.message = self.message
+        email.attachments = self.attachments
+        self.email = email
+
+    def send_email(self):
+        "Executes the send_email method of the Mailer."
+        try:
+            self.email.send_email()
+            self.email_sent = True
+        except:
+            self.log_error("Unable to send email")
+
+    def build_and_send_email(self):
+        """If email should be sent, builds email object and sends email."""
+        if not self.error_log:
+            self.build_email()
+            self.send_email()
+
+    def execute(self):
+        """
+        After instantiation and setup, and after
+        any query results have been added to the workbook,
+        this method executes and finalizes the report,
+        ensures errors are handled, and performs cleanup.
+        """
+        self.report_writer.close_workbook()
+        self.build_and_send_email()
+        self.conns.close_all()
+
 
 class GenericReport(Loggable):
     """A generic report object to be used to facilitate
