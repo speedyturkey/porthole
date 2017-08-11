@@ -23,12 +23,13 @@ def enablePrint():
 
 def setup_test_db():
     db = config['Default']['database']
-    cm = ConnectionManager(db)
-    cm.connect()
-    metadata.create_all(cm.engine)
-    test_metadata.create_all(cm.engine)
-    create_fixtures(cm)
-    cm.close()
+    if config[db]['rdbms'] == 'sqlite':
+        cm = ConnectionManager(db)
+        cm.connect()
+        metadata.create_all(cm.engine)
+        test_metadata.create_all(cm.engine)
+        create_fixtures(cm)
+        cm.close()
 
 def teardown_test_db():
     try:

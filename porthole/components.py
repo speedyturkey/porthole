@@ -11,6 +11,9 @@ from .mailer import Mailer
 from .related_record import RelatedRecord
 from .queries import QueryGenerator
 from .xlsx import WorkbookBuilder
+from .logger import PortholeLogger
+
+logger = PortholeLogger(name=__name__)
 
 class Loggable(object):
     """
@@ -74,7 +77,9 @@ class ReportWriter(Loggable):
             self.report_file = os.path.join(self.file_path, report_file_name)
             self.workbook_builder = WorkbookBuilder(filename=self.report_file)
         except:
-            self.log_error("Unable to build file")
+            error = "Unable to build file for {}".format(self.report_title)
+            logger.error(error)
+            self.log_error(error)
 
     def close_workbook(self):
         """
@@ -110,7 +115,9 @@ class ReportWriter(Loggable):
                 self.record_count += results.result_count
             return results
         except:
-            self.log_error("Unable to execute query.")
+            error = "Unable to execute query {}".format(query.get('filename'))
+            logger.error(error)
+            self.log_error(error)
 
     def make_worksheet(self, sheet_name, query_results):
         "Adds worksheet to workbook using provided query results."
@@ -120,7 +127,9 @@ class ReportWriter(Loggable):
                                                 sheet_data=query_results.result_data
                                             )
         except:
-            self.log_error("Unable to add worksheet {}".format(sheet_name))
+            error = "Unable to add worksheet {}".format(sheet_name)
+            logger.error(error)
+            self.log_error(error)
 
     def create_worksheet_from_query(self, cm, sheet_name, query={}, sql=None):
         """
@@ -208,8 +217,10 @@ class ReportActiveChecker(Loggable):
             else:
                 self.active = False
         except IndexError:
-            self.log_error("Report does not exist.")
-            raise Exception("Report does not exist.")
+            error = "Report {} does not exist".format(self.report_name)
+            logger.error(error)
+            self.log_error(error)
+            raise Exception(error)
 
 class RecipientsChecker(Loggable):
     def __init__(self, cm, report_name, log_to=[]):
@@ -236,9 +247,13 @@ class RecipientsChecker(Loggable):
                 else:
                     self.cc_recipients.append(recipient.email_address)
         except:
-            self.log_error("Error getting recipients for {}".format(self.report_name))
+            error = "Error getting recipients for {}".format(self.report_name)
+            logger.error(error)
+            self.log_error(error)
         if not self.to_recipients:
-            raise KeyError("No primary recipient found for the provided report.")
+            error = "No primary recipient found for {}".format(self.report_name)
+            logger.error(error)
+            raise KeyError("No primary recipient found for {}".format(self.report_name))
         return self.to_recipients, self.cc_recipients
 
 class ReportErrorNotifier(object):

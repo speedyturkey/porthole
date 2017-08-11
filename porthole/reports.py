@@ -10,6 +10,10 @@ from .components import (DatabaseLogger,
                                 ReportErrorNotifier,
                                 ReportWriter)
 from . import TimeHelper
+from .logger import PortholeLogger
+
+logger = PortholeLogger(name=__name__)
+
 
 class BasicReport(Loggable):
     """
@@ -91,7 +95,8 @@ class BasicReport(Loggable):
         try:
             self.email.send_email()
             self.email_sent = True
-        except:
+        except Exception as e:
+            logger.exception(e)
             self.log_error("Unable to send email")
 
     def build_and_send_email(self):
@@ -272,7 +277,8 @@ class GenericReport(Loggable):
         try:
             self.email.send_email()
             self.email_sent = True
-        except:
+        except Exception as e:
+            logger.exception(e)
             self.log_error("Unable to send email")
 
     def build_and_send_email(self):

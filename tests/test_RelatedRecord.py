@@ -1,17 +1,13 @@
 import sys
 import unittest
-from porthole import RelatedRecord, ChildRecord, ConnectionManager
+from porthole import config, RelatedRecord, ChildRecord, ConnectionManager
 
 
 class TestRelatedRecord(unittest.TestCase):
 
     def setUp(self):
-        cm = ConnectionManager()
-        cm.rdbms = 'sqlite'
-        cm.schema = 'main'
-        cm.db = 'test'
-        cm.db_host = 'test.db'
-        cm.engine = cm.create_engine()
+        db = config['Default']['database']
+        cm = ConnectionManager(db)
         cm.connect()
         self.cm = cm
 

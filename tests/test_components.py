@@ -2,7 +2,7 @@ import os, unittest
 from porthole import ConnectionManager, config
 from porthole.components import ReportWriter, ReportActiveChecker, RecipientsChecker
 
-TEST_QUERY = "select count(*) from flarp;"
+TEST_QUERY = "select count(*) from {}.flarp;"
 default_db = config['Default'].get('database')
 
 class TestReportWriter(unittest.TestCase):
@@ -24,7 +24,8 @@ class TestReportWriter(unittest.TestCase):
         writer = ReportWriter("Test Report")
         writer.build_file()
         self.assertEqual(writer.record_count, 0)
-        writer.create_worksheet_from_query(self.cm, "sheet1", sql=TEST_QUERY)
+        test_query = TEST_QUERY.format(self.cm.schema)
+        writer.create_worksheet_from_query(self.cm, "sheet1", sql=test_query)
         writer.close_workbook()
         self.assertTrue(writer.record_count > 0)
         self.assertFalse(writer.error_log)
@@ -33,7 +34,8 @@ class TestReportWriter(unittest.TestCase):
         "Should log an error if attempt to add worksheet with invalid name"
         writer = ReportWriter("Test Report")
         writer.build_file()
-        writer.create_worksheet_from_query(self.cm, "sheet/1", sql=TEST_QUERY)
+        test_query = TEST_QUERY.format(self.cm.schema)
+        writer.create_worksheet_from_query(self.cm, "sheet/1", sql=test_query)
         writer.close_workbook()
         self.assertTrue(writer.error_log)
 

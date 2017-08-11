@@ -74,7 +74,7 @@ class TestGenericReport(unittest.TestCase):
                                     report_name='does_not_exist'
                                     , report_title = 'Does Not Exist'
                                     )
-        self.assertTrue('Report does not exist' in str(context.exception))
+        self.assertTrue('Report does_not_exist does not exist' in str(context.exception))
 
     def test_non_existent_query_raises_error(self):
         "Should raise an error if attempt to run query that doesn't exist"
