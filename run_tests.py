@@ -9,6 +9,7 @@ from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_Reports import TestBasicReport, TestGenericReport
 from tests.test_Queries import TestQueries
 from tests.test_components import TestReportWriter, TestReportActiveChecker
+from tests.test_filters import TestResultFilter
 # Query Handlers
 # Time Helper
 # XLSX
@@ -49,7 +50,8 @@ def main():
                             TestGenericReport,
                             TestQueries,
                             TestReportWriter,
-                            TestReportActiveChecker
+                            TestReportActiveChecker,
+                            TestResultFilter
                             ]
 
     # Setup

@@ -15,7 +15,6 @@ class TestReportWriter(unittest.TestCase):
 
     def test_create_workbook(self):
         writer = ReportWriter("Test Report")
-        print(writer.report_title)
         writer.build_file()
         self.assertIsNotNone(writer.workbook_builder)
         self.assertTrue(os.path.isfile(writer.report_file))

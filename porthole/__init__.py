@@ -7,3 +7,4 @@ from .mailer import Mailer
 from .workflows import SimpleWorkflow
 from .related_record import RelatedRecord, ChildRecord
 from .reports import BasicReport, GenericReport
+from .filters import ResultFilter
