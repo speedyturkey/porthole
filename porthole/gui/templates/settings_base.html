@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %} Porthole - Settings {% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- <div class="row">
+    <div class="col-sm-12">
+      <h2>Settings</h2>
+    </div>
+  </div> -->
+  <div class="row">
+
+<!-- ******************Column fo basic config form******************************-->
+    <div class="col-sm-6">
+      {% block base_config %}{% endblock %}
+    </div>
+
+<!-- ******************Column fo connection form******************************-->
+    <div class="col-sm-6">
+      {% block connections %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock%}

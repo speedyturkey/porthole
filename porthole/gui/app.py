@@ -1,16 +1,26 @@
+# This script makes assumptions about the existing sections and option names
+# in the associated config.ini file.  If the provided config.ini file is directly
+# edited, then this file should be reviewed for breaking changes.
+
+
 from flask import Flask, render_template, flash
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, RadioField
+from wtforms import StringField, SubmitField, PasswordField, RadioField, SelectField
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'flarp'
+
+#flask_bootstrap fills in some boilerplate in the template
 Bootstrap(app)
+
+#ConfigParser helps with manipulating config files
 parser = ConfigParser()
 
-# function takes a dictionary of config values and updates config is the vallues are not blank
+# This function takes a dictionary and updates the config file in the base directory.
+# This function checks for specific keys and only updates when key exists and value is not an empty string.
 def edit_config(dict):
     parser.read('config.ini')
     if 'default_base_file_path' in dict and dict['default_base_file_path'] != '':
@@ -41,29 +51,57 @@ def edit_config(dict):
         parser.set('Debug', 'debug_recipients', dict['debug_recipients'])
     if 'admin_email' in dict and dict['admin_email'] != '':
         parser.set('Admin', 'admin_email', dict['admin_email'])
-
     with open('config.ini', 'w') as configfile:
         parser.write(configfile)
 
+# This function takes a dictionary and updates the config file in the base directory.
+# This function will add a new section to the config file if the provided section name (connection_name)
+# is unique.  Otherwise it will update the section with the options provided.  If the section is new
+# the connection_name will be appended to the connections option in the Default section (this assists
+# in iteration over the connection sections).  Blank, extra, and missing options are ignored.
 def add_connection(dict):
     parser.read('config.ini')
     if 'connection_name' in dict and dict['connection_name'] != '':
-        parser.add_section(dict['connection_name'])
-        connection_list = parser.get('Default', 'connection_list')
-        parser.set('Default', 'connection_list', connection_list.append(dict['connection_name']))
+        connection_name = dict['connection_name']
+        connections = parser.get('Default', 'connections')
+        if connection_name not in connections.split(", "):
+            parser.add_section(connection_name)
+            parser.set('Default', 'connections', connections + ', ' + connection_name)
     if 'rdbms' in dict and dict['rdbms'] != '':
         parser.set(connection_name, 'rdbms', dict['rdbms'])
-    if 'host' in dict and dict['host'] != '':
+    if 'connection_host' in dict and dict['connection_host'] != '':
         parser.set(connection_name, 'host', dict['connection_host'])
-    if 'port' in dict and dict['port'] != '':
+    if 'connection_port' in dict and dict['connection_port'] != '':
         parser.set(connection_name, 'port', dict['connection_port'])
-    if 'user' in dict and dict['user'] != '':
+    if 'connection_user' in dict and dict['connection_user'] != '':
         parser.set(connection_name, 'user', dict['connection_user'])
-    if 'password' in dict and dict['password'] != '':
+    if 'connection_password' in dict and dict['connection_password'] != '':
         parser.set(connection_name, 'password', dict['connection_password'])
     if 'schema' in dict and dict['schema'] != '':
         parser.set(connection_name, 'schema', dict['schema'])
+    with open('config.ini', 'w') as configfile:
+        parser.write(configfile)
 
+# This function takes a string and updates the config file in the base directory.
+# If a section name matches the provided string, then that section and all its options are removed.
+# It is removed from the connections option in the Default section, if present.
+def delete_connection(connection_name):
+    print(connection_name)
+    parser.read('config.ini')
+    connections = parser.get('Default', 'connections')
+    connections_list = connections.split(", ")
+    if connection_name in connections_list:
+        parser.remove_section(connection_name)
+        connections_list.remove(connection_name)
+        parser.set('Default', 'connections',', '.join(connections_list))
+    with open('config.ini', 'w') as configfile:
+        parser.write(configfile)
+
+# This function takes no arguments and returns a dictionary of dictionaries.
+# The outer dictionary has each section in the config file as keys. The inner dictionary
+# (i.e. the values of the outer dictionary keys) contains a dictionary where the option names
+# are the keys, and the option values are the values.
+# e.g. to get the query_path in the Default section: all_config_options['Default']['query_path']
 def read_config():
     parser.read('config.ini')
     all_config_options = {}
@@ -75,7 +113,7 @@ def read_config():
             all_config_options[section].update({option : parser.get(section, option)})
     return all_config_options
 
-
+# This class defines the form used to add and edit connection sections to the config file.
 class ConnectionForm(FlaskForm):
     connection_name = StringField('connection_name')
     rdbms = StringField('rdbms')
@@ -84,56 +122,78 @@ class ConnectionForm(FlaskForm):
     connection_user = StringField('connection_user')
     connection_password = StringField('connection_password')
     schema = StringField('schema')
-    connection_submit = SubmitField('submit')
+    delete_connection = StringField('Delete?')
+    connection_submit = SubmitField('Save Connection')
 
+# This class defines the form used to edit config sections other than connections.
 class ConfigForm(FlaskForm):
     default_base_file_path = StringField('default_base_file_path')#, validators=[InputRequired()])
     default_query_path = StringField('default_query_path')
-    default_database = StringField('default_database')
+    default_database = SelectField('default_database')
     default_notification_recipient = StringField('default_notification_recipient')
     email_username = StringField('email_username')
     email_password = PasswordField('email_password')
     email_host = StringField('email_host')
     email_disabled = RadioField('email_disabled', choices=[('Yes','Yes'),('No','No')])
     email_signature = StringField('email_signature')
-    logging_server = StringField('logging_server')
+    logging_server = SelectField('logging_server')
     logging_db = StringField('logging_db')
     debug_mode = StringField('debug_mode')
     debug_recipients = StringField('debug_recipients')
     admin_email = StringField('admin_email')
     config_submit = SubmitField('Save Settings')
 
-
+# This is the endpoint for displaying and editing the application settings.
+# All of the config sections and options are passed to the front end, along with options for
+# select inputs in the rendered form.
+# This endpoint renders two forms.  If either form is submitted and validated, it will update
+# the config file and refresh the page showing the updated values.
 @app.route('/config', methods=['GET', 'POST'])
 def config():
     all_config_options=read_config()
-    config_form = ConfigForm(default_base_file_path=all_config_options["Default"]["base_file_path"]
-                            , default_query_path = all_config_options["Default"]["query_path"]
-                            , default_database = all_config_options["Default"]["database"]
-                            , default_notification_recipient = all_config_options["Default"]["notification_recipient"]
-                            , email_username = all_config_options["Email"]["username"]
-                            , email_password = all_config_options["Email"]["password"]
-                            , email_host = all_config_options["Email"]["host"]
-                            , email_disabled = all_config_options["Email"]["disabled"]
-                            , email_signature = all_config_options["Email"]["signature"]
-                            , logging_server = all_config_options["Logging"]["server"]
-                            , logging_db = all_config_options["Logging"]["db"]
-                            , debug_mode = all_config_options["Debug"]["debug_mode"]
-                            , debug_recipients = all_config_options["Debug"]["debug_recipients"]
-                            , admin_email = all_config_options["Admin"]["admin_email"])
-
+    connections = all_config_options["Default"]["connections"].split(", ")
+    config_form = ConfigForm()
     connection_form = ConnectionForm()
+    connection_choices = [(c,c) for c in connections]
+    connection_choice_additions = [('None Selected','None Selected')]
+    print(connection_choices + connection_choice_additions)
+    config_form.default_database.choices = connection_choices + connection_choice_additions
+    config_form.logging_server.choices = connection_choices + connection_choice_additions
+    rdbms_options = ['MySQL', 'SQLite']
+    rdbms_choices = [(i,i) for i in rdbms_options]
+    connection_form.rdbms.choices = rdbms_choices
 
     if config_form.config_submit.data and config_form.validate():
         edit_config(config_form.data)
         flash('Settings Updated')
-        return render_template("forms.html", config_form=config_form, connection_form=connection_form, all_config_options=read_config())
-
+        all_config_options=read_config()
+        connections = all_config_options["Default"]["connections"].split(", ")
+        print(config_form.data)
+        return render_template("settings.html", config_form=config_form
+                                            , connection_form=connection_form
+                                            , all_config_options=all_config_options
+                                            , connections=connections
+                                            , rdbms_options=rdbms_options)
 
     if connection_form.connection_submit.data and connection_form.validate():
-        return 'Form submitted. All the data look like {}.'.format(connection_form.data)
+        if connection_form.data['delete_connection'] == 'True':
+            delete_connection(connection_form.data['connection_name'])
+        else:
+            add_connection(connection_form.data)
+        print(connection_form.data)
+        all_config_options=read_config()
+        connections = all_config_options["Default"]["connections"].split(", ")
+        return render_template("settings.html", config_form=config_form
+                                            , connection_form=connection_form
+                                            , all_config_options=all_config_options
+                                            , connections=connections
+                                            , rdbms_options=rdbms_options)
 
-    return render_template("forms.html", config_form=config_form, connection_form=connection_form, all_config_options=all_config_options)
+    return render_template("settings.html", config_form=config_form
+                                        , connection_form=connection_form
+                                        , all_config_options=all_config_options
+                                        , connections=connections
+                                        , rdbms_options=rdbms_options)
 
 
 

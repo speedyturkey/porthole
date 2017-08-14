@@ -1,0 +1,45 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}Porthole{% endblock %}
+
+
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet"
+      href="{{url_for('.static', filename='styles.css')}}">
+<link rel="stylesheet"
+      href="{{url_for('.static', filename='bootstrap.css')}}">
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  var allConfigOptions = {{ all_config_options|tojson }};
+  console.log(allConfigOptions);
+</script>
+<script src="{{url_for('.static', filename='scripts.js')}}"></script>
+
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-default">
+  <div class="container">
+    <a class="navbar-brand" href="#">Porthole</a>
+    <ul class="nav navbar-nav">
+      <li><a href="#">Queries</a></li>
+      <li><a href="#">Datasets</a></li>
+      <li><a href="#">Visualizations</a></li>
+      <li><a href="#">Reports</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li><a href="{{url_for('config')}}">Settings</a></li>
+    </ul>
+  </div>
+</nav>
+
+
+{% endblock %}
+
+{% block content %}
+Content goes here.
+{% endblock %}
