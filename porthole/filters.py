@@ -1,24 +1,27 @@
-"""
-We want to be able to split up query results according to an arbitrary attribute in the result data.
-
-Two approaches -
-(1) Execute query multiple times, each time w a different value for a given parameter.
-(2) Execute query once and split results.
-
-(2) is probably more performant, given db and network costs.
-"""
-
-from random import randint, choice
-
+from .queries import QueryResult
 
 class ResultFilter(object):
-    def __init__(self, headers, data, filter_by):
-        self.headers = headers
-        self.data = data
+    """
+    Used for splitting a QueryResult on a specified attribute into sub-results.
+    Subsets of the provided QueryResultw ill be created for each distinct value
+    of the specified field.
+    ResultFilter objects are iterables which iterate through the filtered_results
+    attribute.
+
+    Keyword arguments
+    :result_to_filter: (QueryResult) The object to be split.
+    :filter_by: (str) The field name on which to split.
+
+    """
+    def __init__(self, result_to_filter, filter_by):
+        self.result_to_filter = result_to_filter
+        self.headers = result_to_filter.field_names
+        self.data = result_to_filter.result_data
         self.filter_by = filter_by
         self.filtered_data = {}
+        self.filtered_results = {}
         try:
-            self.filter_idx = headers.index(filter_by)
+            self.filter_idx = self.headers.index(filter_by)
         except:
             raise ValueError("Provided headers must contain filter_by value.")
 
@@ -30,6 +33,9 @@ class ResultFilter(object):
                 self.keys.append(key)
                 self.filtered_data[key] = []
             self.filtered_data[key].append(row)
+        for key in self.keys:
+            self.filtered_results[key] = QueryResult(field_names=self.headers,
+                                            result_data=self.filtered_data[key])
 
     def __iter__(self):
         self.pos = 0
@@ -40,6 +46,6 @@ class ResultFilter(object):
         if self.pos <= self.end:
             self.pos += 1
             key = self.keys[self.pos - 1]
-            return key, self.filtered_data[key]
+            return key, self.filtered_results[key]
         else:
             raise StopIteration
