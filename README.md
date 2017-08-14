@@ -110,8 +110,7 @@ from porthole import GenericReport
 report = GenericReport(report_name='sample_report', report_title='Sample Report')
 report.build_file()
 report.create_worksheet_from_query( query={'filename': 'sample_query'},
-                                    sheet_name='Sheet1',
-                                    read_required=True
+                                    sheet_name='Sheet1'
                                 )
 report.subject = 'Sample Report'
 report.message = 'Please see attached for the Sample Report.'
@@ -119,6 +118,11 @@ report.execute()
 
 ```
 
+| Table                       | Required Attributes                   | Optional Attributes   | Notes                                                                  |
+|-----------------------------|---------------------------------------|-----------------------|------------------------------------------------------------------------|
+| automated_reports           | report_name; active                   |                       |                                                                        |
+| automated_report_contacts   | email_address                         | first_name; last_name |                                                                        |
+| automated_report_recipients | report_id; contact_id; recipient_type |                       | Every report requires at least one record where recipient_type = 'to'. |
 
 ## Development
 
