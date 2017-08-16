@@ -44,6 +44,10 @@ $( document ).ready(function() {
     $('#connection_submit').click();
   });
 
+  $('.test-connection').click(function(){
+    var connection = this.id.split('-')[1];
+    
+  });
 
 
 });

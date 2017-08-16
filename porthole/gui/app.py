@@ -9,6 +9,7 @@ from wtforms import StringField, SubmitField, PasswordField, RadioField, SelectF
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
+from ..connections import ConnectionManager
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'flarp'
@@ -18,6 +19,8 @@ Bootstrap(app)
 
 #ConfigParser helps with manipulating config files
 parser = ConfigParser()
+
+
 
 # This function takes a dictionary and updates the config file in the base directory.
 # This function checks for specific keys and only updates when key exists and value is not an empty string.
@@ -195,6 +198,15 @@ def config():
                                         , connections=connections
                                         , rdbms_options=rdbms_options)
 
+@app.route('/api/test_connection/<connection_name>', methods=['GET', 'POST'])
+def test_connection(connection_name):
+    conn = ConnectionManager(db = connection_name)
+    try:
+        conn.connect()
+        conn.close()
+        return True
+    except:
+        return False
 
 
 if __name__ == '__main__':

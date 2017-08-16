@@ -401,6 +401,8 @@
             </div>
             <div class="col-sm-6" >
               <div class="connection-buttons btn-group" role="group">
+                {% set test_id = "test-" + connection %}
+                <button type="button" class="btn btn-default btn-sm test-connection" id= "{{ test-id }}">Test Connection</button>
                 {% set edit_id = "edit-" + connection %}
                 <button type="button" class="btn btn-default btn-sm edit-connection" id= "{{ edit_id }}">Edit</button>
                 {% set delete_id = "delete-" + connection %}

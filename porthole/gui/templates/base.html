@@ -15,7 +15,8 @@
 {{super()}}
 <script type="text/javascript">
   var allConfigOptions = {{ all_config_options|tojson }};
-  console.log(allConfigOptions);
+  // console.log(allConfigOptions);
+  console.log({{url_for('test_connection')}})
 </script>
 <script src="{{url_for('.static', filename='scripts.js')}}"></script>
 
