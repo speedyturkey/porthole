@@ -3,7 +3,9 @@ from decimal import Decimal
 from datetime import date
 from .app import config
 from .connections import ConnectionManager
+from .logger import PortholeLogger
 
+logger = PortholeLogger(name=__name__)
 
 class QueryResult(object):
     "Represent result data from an executed query. Includes capability to write results as json."
@@ -59,8 +61,9 @@ class QueryGenerator(object):
         try:
             result_proxy = self.cm.conn.execute(self.sql)
             result_data = result_proxy.fetchall()
-        except:
-            print(sys.exc_info())
+            logger.info("Successfully executed query {}".format(self.filename))
+        except Exception as e:
+            logger.exception(e)
             raise RuntimeError("Unable to execute query.")
 
         query_results = QueryResult(result_count=len(result_data),

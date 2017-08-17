@@ -6,9 +6,10 @@ from tests.fixtures import test_metadata, create_fixtures
 from tests.test_ConnectionManager import TestConnectionManager
 from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
-from tests.test_GenericReport import TestGenericReport
+from tests.test_Reports import TestBasicReport, TestGenericReport
 from tests.test_Queries import TestQueries
 from tests.test_components import TestReportWriter, TestReportActiveChecker
+from tests.test_filters import TestResultFilter
 # Query Handlers
 # Time Helper
 # XLSX
@@ -23,12 +24,13 @@ def enablePrint():
 
 def setup_test_db():
     db = config['Default']['database']
-    cm = ConnectionManager(db)
-    cm.connect()
-    metadata.create_all(cm.engine)
-    test_metadata.create_all(cm.engine)
-    create_fixtures(cm)
-    cm.close()
+    if config[db]['rdbms'] == 'sqlite':
+        cm = ConnectionManager(db)
+        cm.connect()
+        metadata.create_all(cm.engine)
+        test_metadata.create_all(cm.engine)
+        create_fixtures(cm)
+        cm.close()
 
 def teardown_test_db():
     try:
@@ -44,10 +46,12 @@ def main():
                             TestConnectionManager,
                             TestSimpleWorkflow,
                             TestRelatedRecord,
+                            TestBasicReport,
                             TestGenericReport,
                             TestQueries,
                             TestReportWriter,
-                            TestReportActiveChecker
+                            TestReportActiveChecker,
+                            TestResultFilter
                             ]
 
     # Setup
