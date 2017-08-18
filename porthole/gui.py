@@ -46,6 +46,10 @@ def edit_config(dict):
         parser.set('Email', 'signature', dict['email_signature'])
     if 'logging_server' in dict and dict['logging_server'] != '':
         parser.set('Logging', 'server', dict['logging_server'])
+    if 'logging_to_file' in dict and dict['logging_to_file'] != '':
+        parser.set('Logging', 'log_to_file', dict['logging_to_file'])
+    if 'logging_file' in dict and dict['logging_file'] != '':
+        parser.set('Logging', 'logfile', dict['logging_file'])
     if 'logging_db' in dict and dict['logging_db'] != '':
         parser.set('Logging', 'db', dict['logging_db'])
     if 'debug_mode' in dict and dict['debug_mode'] != '':
@@ -137,11 +141,13 @@ class ConfigForm(FlaskForm):
     email_username = StringField('email_username')
     email_password = PasswordField('email_password')
     email_host = StringField('email_host')
-    email_disabled = RadioField('email_disabled', choices=[('Yes','Yes'),('No','No')])
+    email_disabled = RadioField('email_disabled', choices=[('True','True'),('False','False')])
     email_signature = StringField('email_signature')
     logging_server = SelectField('logging_server')
+    logging_to_file = RadioField('Log to File', choices=[('True', 'True'),('False', 'False')])
+    logging_file = StringField('Log File Name')
     logging_db = StringField('logging_db')
-    debug_mode = StringField('debug_mode')
+    debug_mode = RadioField('debug_mode', choices=[('True', 'True'),('False', 'False')])
     debug_recipients = StringField('debug_recipients')
     admin_email = StringField('admin_email')
     config_submit = SubmitField('Save Settings')

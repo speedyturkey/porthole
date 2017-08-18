@@ -124,18 +124,18 @@
         </div>
       </div>
       <div class="form-group row ">
-        {% if all_config_options['Email']['disabled'] == 'Yes'%}
+        {% if all_config_options['Email']['disabled'] == 'True'%}
           {% set y_email_checked = 'checked' %}
-        {% elif all_config_options['Email']['disabled'] == 'No'%}
+        {% elif all_config_options['Email']['disabled'] == 'False'%}
           {% set n_email_checked = 'checked' %}
         {% endif %}
         <label for="email_disabled" class="col-sm-5 col-form-label">Email Disabled</label>
         <div class="col-sm-7">
           <div class='form-check disabled'>
             <label class="form-check-label">
-              <input type="radio" class="form-check-input gen-set-field" name="email_disabled" id="email_disabled_y" value="Yes" disabled {{ y_email_checked }}/>
+              <input type="radio" class="form-check-input gen-set-field" name="email_disabled" id="email_disabled_y" value="True" disabled {{ y_email_checked }}/>
               Yes
-              <input type="radio" class="form-check-input gen-set-field" name="email_disabled" id="email_disabled_n" value="No" disabled {{ n_email_checked }}/>
+              <input type="radio" class="form-check-input gen-set-field" name="email_disabled" id="email_disabled_n" value="False" disabled {{ n_email_checked }}/>
               No
             </label>
           </div>
@@ -165,7 +165,7 @@
       <h4>Logging Settings</h4>
       <hr />
       <div class="form-group row">
-        <label for="logging_server" class="col-sm-5 col-form-label">Logging Server Address</label>
+        <label for="logging_server" class="col-sm-5 col-form-label">Logging Connection</label>
         <div class="col-sm-7">
           <select class="form-control gen-set-field" name="logging_server" id="logging_server" disabled>
             <option>None Selected</option>
@@ -179,6 +179,42 @@
           </select>
           <ul>
             {% for error in config_form.logging_server.errors %}
+              <li>{{ error}}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="form-group row ">
+        {% if all_config_options['Logging']['log_to_file'] == 'True'%}
+          {% set y_log_checked = 'checked' %}
+        {% elif all_config_options['Logging']['log_to_file'] == 'False'%}
+          {% set n_log_checked = 'checked' %}
+        {% endif %}
+        <label for="logging_to_file" class="col-sm-5 col-form-label">Log to File</label>
+        <div class="col-sm-7">
+          <div class='form-check disabled'>
+            <label class="form-check-label">
+              <input type="radio" class="form-check-input gen-set-field" name="logging_to_file" id="logging_to_file_y" value="True" disabled {{ y_log_checked }}/>
+              Yes
+              <input type="radio" class="form-check-input gen-set-field" name="logging_to_file" id="logging_to_file_n" value="False" disabled {{ n_log_checked }}/>
+              No
+            </label>
+          </div>
+          <ul>
+            {% for error in config_form.logging_to_file.errors %}
+              <li>{{ error}}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="form-group row">
+        <label for="logging_file" class="col-sm-5 col-form-label">Log File Name</label>
+        <div class="col-sm-7">
+          <input class="form-control gen-set-field" id="logging_file"
+                          name="logging_file" type="text"
+                          value= "{{ all_config_options["Logging"]["logfile"]}}" disabled>
+          <ul>
+            {% for error in config_form.logging_file.errors %}
               <li>{{ error}}</li>
             {% endfor %}
           </ul>
@@ -204,18 +240,18 @@
       <h4>Debug Settings</h4>
       <hr />
       <div class="form-group row">
-        {% if all_config_options['Debug']['debug_mode'] == 'Yes'%}
+        {% if all_config_options['Debug']['debug_mode'] == 'True'%}
           {% set y_debug_checked = 'checked' %}
-        {% elif all_config_options['Debug']['debug_mode'] == 'No'%}
+        {% elif all_config_options['Debug']['debug_mode'] == 'False'%}
           {% set n_debug_checked = 'checked' %}
         {% endif %}
         <label for="debug_mode" class="col-sm-5 col-form-label">Debug Mode</label>
         <div class="col-sm-7">
           <div class='form-check disabled'>
             <label class="form-check-label">
-              <input type="radio" class="form-check-input gen-set-field" name="debug_mode" id="debug_mode_y" value="Yes" disabled {{ y_debug_checked }}/>
+              <input type="radio" class="form-check-input gen-set-field" name="debug_mode" id="debug_mode_y" value="True" disabled {{ y_debug_checked }}/>
               Yes
-              <input type="radio" class="form-check-input gen-set-field" name="debug_mode" id="debug_mode_n" value="No" disabled {{ n_debug_checked }}/>
+              <input type="radio" class="form-check-input gen-set-field" name="debug_mode" id="debug_mode_n" value="False" disabled {{ n_debug_checked }}/>
               No
             </label>
           </div>
