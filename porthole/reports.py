@@ -1,15 +1,12 @@
-import sys
-import os.path
 from .app import config
 from .connections import ConnectionPool
 from .mailer import Mailer
 from .components import (DatabaseLogger,
-                                Loggable,
-                                RecipientsChecker,
-                                ReportActiveChecker,
-                                ReportErrorNotifier,
-                                ReportWriter)
-from . import TimeHelper
+                         Loggable,
+                         RecipientsChecker,
+                         ReportActiveChecker,
+                         ReportErrorNotifier,
+                         ReportWriter)
 from .logger import PortholeLogger
 
 logger = PortholeLogger(name=__name__)
@@ -67,7 +64,7 @@ class BasicReport(Loggable):
                                     db=None,
                                     query={},
                                     sql=None):
-        "Delegates functionality to ReportWriter."
+        """Delegates functionality to ReportWriter."""
         if db is None:
             db = self.default_db
         cm = self.add_conn(db)
@@ -77,12 +74,12 @@ class BasicReport(Loggable):
                                                         sql=sql)
 
     def make_worksheet(self, sheet_name, query_results):
-        "Delegates functionality to ReportWriter."
+        """Delegates functionality to ReportWriter."""
         self.report_writer.make_worksheet(sheet_name=sheet_name,
                                             query_results=query_results)
 
     def build_email(self):
-        "Instantiates Mailer object using provided parameters."
+        """Instantiates Mailer object using provided parameters."""
         email = Mailer()
         email.recipients = self.to_recipients
         email.cc_recipients = self.cc_recipients
@@ -92,7 +89,7 @@ class BasicReport(Loggable):
         self.email = email
 
     def send_email(self):
-        "Executes the send_email method of the Mailer."
+        """Executes the send_email method of the Mailer."""
         try:
             self.email.send_email()
             self.email_sent = True
@@ -100,9 +97,16 @@ class BasicReport(Loggable):
             logger.exception(e)
             self.log_error("Unable to send email")
 
+    def check_whether_to_send_email(self):
+        """Determines whether email should be sent based given errors and settings."""
+        if self.error_log:
+            return False
+        else:
+            return True
+
     def build_and_send_email(self):
         """If email should be sent, builds email object and sends email."""
-        if not self.error_log:
+        if self.check_whether_to_send_email():
             self.build_email()
             self.send_email()
 
@@ -196,12 +200,6 @@ class GenericReport(BasicReport, Loggable):
         if self.active:
             self.initialize_db_logger()
 
-    def __del__(self):
-        try:
-            self.conns.close_all()
-        except:
-            pass
-
     def initialize_db_logger(self):
         self.db_logger = DatabaseLogger( cm=self.get_conn(self.default_db),
                                          report_name=self.report_name,
@@ -214,7 +212,7 @@ class GenericReport(BasicReport, Loggable):
                                             log_to=self.error_log)
 
     def get_recipients(self):
-        "Performs lookup in database for report recipients based on report name."
+        """Performs lookup in database for report recipients based on report name."""
 
         checker = RecipientsChecker( cm=self.get_conn(self.default_db),
                                      report_name=self.report_name,
@@ -222,7 +220,7 @@ class GenericReport(BasicReport, Loggable):
         self.to_recipients, self.cc_recipients = checker.get_recipients()
 
     def check_whether_to_send_email(self):
-        "Determines whether email should be sent based given errors, settings, and result count."
+        """Determines whether email should be sent based given errors, settings, and result count."""
         if self.error_log:
             return False
         elif not self.send_if_blank and self.record_count == 0:
