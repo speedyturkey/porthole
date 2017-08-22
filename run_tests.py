@@ -18,9 +18,11 @@ from tests.test_filters import TestResultFilter
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
 
+
 # Restore
 def enablePrint():
     sys.stdout = sys.__stdout__
+
 
 def setup_test_db():
     db = config['Default']['database']
@@ -32,11 +34,13 @@ def setup_test_db():
         create_fixtures(cm)
         cm.close()
 
+
 def teardown_test_db():
     try:
         os.unlink('test.db')
     except FileNotFoundError:
         pass
+
 
 def main():
     # blockPrint()
