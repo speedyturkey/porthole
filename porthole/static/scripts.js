@@ -44,10 +44,18 @@ $( document ).ready(function() {
     $('#connection_submit').click();
   });
 
-  // $('.test-connection').click(function(){
-  //   var connection = this.id.split('-')[1];
-  //
-  // });
+  $('.test-connection').click(function(){
+    var connection = this.id.split('-')[1];
+    console.log(connection);
+    var testResultId = 'test-result-' + connection;
+    // $.ajax({
+    //   url:$SCRIPT_ROOT + '/api/test_connection/' + connection
+    //   dataType: 'text'
+    // });
+    $.get($SCRIPT_ROOT + '/api/test_connection/' + connection, function(result){
+      $('#'+testResultId).text(result);
+    });
+  });
 
 
 });

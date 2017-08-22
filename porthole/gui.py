@@ -1,6 +1,7 @@
 # This script makes assumptions about the existing sections and option names
 # in the associated config.ini file.  If the provided config.ini file is directly
 # edited, then this file should be reviewed for breaking changes.
+# For the relative filepaths to work, this script must be run from the outer porthole directory.
 
 
 from flask import Flask, render_template, flash
@@ -9,7 +10,8 @@ from wtforms import StringField, SubmitField, PasswordField, RadioField, SelectF
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
-# from .connections import ConnectionManager
+from connections import ConnectionManager
+# import connections
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'flarp'
@@ -19,13 +21,13 @@ Bootstrap(app)
 
 #ConfigParser helps with manipulating config files
 parser = ConfigParser()
-
+config_file = 'config/config.ini'
 
 
 # This function takes a dictionary and updates the config file in the base directory.
 # This function checks for specific keys and only updates when key exists and value is not an empty string.
 def edit_config(dict):
-    parser.read('config.ini')
+    parser.read(config_file)
     if 'default_base_file_path' in dict and dict['default_base_file_path'] != '':
         parser.set('Default', 'base_file_path', dict['default_base_file_path'])
     if 'default_query_path' in dict and dict['default_query_path'] != '':
@@ -58,7 +60,7 @@ def edit_config(dict):
         parser.set('Debug', 'debug_recipients', dict['debug_recipients'])
     if 'admin_email' in dict and dict['admin_email'] != '':
         parser.set('Admin', 'admin_email', dict['admin_email'])
-    with open('config.ini', 'w') as configfile:
+    with open(config_file, 'w') as configfile:
         parser.write(configfile)
 
 # This function takes a dictionary and updates the config file in the base directory.
@@ -67,7 +69,7 @@ def edit_config(dict):
 # the connection_name will be appended to the connections option in the Default section (this assists
 # in iteration over the connection sections).  Blank, extra, and missing options are ignored.
 def add_connection(dict):
-    parser.read('config.ini')
+    parser.read(config_file)
     if 'connection_name' in dict and dict['connection_name'] != '':
         connection_name = dict['connection_name']
         connections = parser.get('Default', 'connections')
@@ -86,7 +88,7 @@ def add_connection(dict):
         parser.set(connection_name, 'password', dict['connection_password'])
     if 'schema' in dict and dict['schema'] != '':
         parser.set(connection_name, 'schema', dict['schema'])
-    with open('config.ini', 'w') as configfile:
+    with open(config_file, 'w') as configfile:
         parser.write(configfile)
 
 # This function takes a string and updates the config file in the base directory.
@@ -94,14 +96,14 @@ def add_connection(dict):
 # It is removed from the connections option in the Default section, if present.
 def delete_connection(connection_name):
     print(connection_name)
-    parser.read('config.ini')
+    parser.read(config_file)
     connections = parser.get('Default', 'connections')
     connections_list = connections.split(", ")
     if connection_name in connections_list:
         parser.remove_section(connection_name)
         connections_list.remove(connection_name)
         parser.set('Default', 'connections',', '.join(connections_list))
-    with open('config.ini', 'w') as configfile:
+    with open(config_file, 'w') as configfile:
         parser.write(configfile)
 
 # This function takes no arguments and returns a dictionary of dictionaries.
@@ -110,7 +112,7 @@ def delete_connection(connection_name):
 # are the keys, and the option values are the values.
 # e.g. to get the query_path in the Default section: all_config_options['Default']['query_path']
 def read_config():
-    parser.read('config.ini')
+    parser.read(config_file)
     all_config_options = {}
     sections = parser.sections()
     for section in sections:
@@ -204,15 +206,15 @@ def config():
                                         , connections=connections
                                         , rdbms_options=rdbms_options)
 
-# @app.route('/api/test_connection/<connection_name>', methods=['GET', 'POST'])
-# def test_connection(connection_name):
-#     conn = ConnectionManager(db = connection_name)
-#     try:
-#         conn.connect()
-#         conn.close()
-#         return True
-#     except:
-#         return False
+@app.route('/api/test_connection/<connection_name>', methods=['GET', 'POST'])
+def test_connection(connection_name):
+    conn = ConnectionManager(db = connection_name)
+    try:
+        conn.connect()
+        conn.close()
+        return 'Connected Successfully'
+    except:
+        return 'Failed to Connect'
 
 
 if __name__ == '__main__':

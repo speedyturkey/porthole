@@ -13,3 +13,7 @@
 .connection-buttons {
   float: right;
 }
+
+.test-result {
+  color:red;
+}

@@ -18,6 +18,9 @@
   // console.log(allConfigOptions);
 </script>
 <script src="{{url_for('.static', filename='scripts.js')}}"></script>
+<script type=text/javascript>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
 
 {% endblock %}
 
