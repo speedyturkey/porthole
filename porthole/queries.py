@@ -61,7 +61,7 @@ class QueryGenerator(object):
         try:
             result_proxy = self.cm.conn.execute(self.sql)
             result_data = result_proxy.fetchall()
-            logger.info("Successfully executed query {}".format(self.filename))
+            logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
             raise RuntimeError("Unable to execute query.")

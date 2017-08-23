@@ -25,13 +25,8 @@ class BasicReport(Loggable):
         # Assign arguments to instance attributes.
         # -----------------------------------------
         self.report_title = report_title
-        # -----------------------------------------
-        # Setup configuration variables and defaults.
-        # By default, reports will be sent even if there are no results.
-        # This behavior can be overridden for individual reports. Record count
-        # initialized at 0, but incremented by execute_query.
-        # -----------------------------------------
         self.attachments = []
+        self.report_writer = None
         self.error_log = []
         self.to_recipients = []
         self.cc_recipients = []
@@ -117,7 +112,8 @@ class BasicReport(Loggable):
         this method executes and finalizes the report,
         ensures errors are handled, and performs cleanup.
         """
-        self.report_writer.close_workbook()
+        if self.report_writer:
+            self.report_writer.close_workbook()
         self.build_and_send_email()
         if self.error_log:
             self.send_failure_notification()
@@ -235,7 +231,8 @@ class GenericReport(BasicReport, Loggable):
         this method executes and finalizes the report,
         ensures errors are handled, and performs cleanup.
         """
-        self.report_writer.close_workbook()
+        if self.report_writer:
+            self.report_writer.close_workbook()
         if self.active:
             self.build_and_send_email()
             self.db_logger.finalize_record()

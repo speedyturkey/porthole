@@ -11,6 +11,9 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from .app import config
+from .logger import PortholeLogger
+
+logger = PortholeLogger(name=__name__)
 
 COMMASPACE = ', '
 
@@ -30,7 +33,7 @@ class Mailer:
 
     def send_email(self):
         if config['Email']['disabled'] == 'True':
-            print("Email disabled - exiting mailer.")
+            logger.info("Email disabled - exiting mailer.")
             exit()
 
         # Create the enclosing (outer) message
@@ -62,13 +65,13 @@ class Mailer:
                                    filename=os.path.basename(file))
                     outer.attach(msg)
                 except:
-                    print("Unable to add the attachment to the email")
+                    logger.exception("Unable to add the attachment to the email")
                     raise
 
         composed = outer.as_string()
 
         if self.debug_mode:
-            print("""Debug mode active. Sending only to designated debug recipient(s).
+            logger.info("""Debug mode active. Sending only to designated debug recipient(s).
 
 Active report would have been sent to:
             "To" Recipients: {}
@@ -88,11 +91,12 @@ Active report would have been sent to:
                            all_recipients,
                            composed)
                 s.close()
+                logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
         except smtplib.SMTPConnectError as err:
-            print("Unable to connect to the SMTP server to send email: {}".format(err))
+            logger.error("Unable to connect to the SMTP server to send email: {}".format(err))
             raise
         except:
-            print("Unable to send email: {}".format(sys.exc_info()[0]))
+            logger.exception("Unable to send email")
             raise
 
 if __name__ == '__main__':
