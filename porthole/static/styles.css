@@ -1,3 +1,9 @@
+body {
+  font-size: 16px;
+}
+
+
+/*Syltes for settings page ---------------------*/
 #edit-general-settings{
   vertical-align: bottom;
 }
@@ -16,4 +22,105 @@
 
 .test-result {
   color:red;
+}
+
+
+/*Styles for queries page ---------------------*/
+.schema-name {
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.table-name {
+  font-size: 10px;
+  padding-left: 18px;
+  font-weight: normal;
+  text-decoration: none;
+}
+.column-name {
+  font-size: 10px;
+  padding-left: 18px;
+  font-weight: normal;
+  text-decoration: none;
+}
+
+#table-column-results .row {
+  margin-right: 2px;
+  margin-left: 0px;
+}
+
+.table-name a, .column-name a, a .query-name {
+  color: black;
+}
+
+#connection-selection{
+  padding: 0px 10px;
+  width: 80%;
+}
+
+#connect-btn-row {
+  margin: 7px 0px;
+  padding: 0px;
+}
+
+.column-header {
+  font-weight: bold;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+#query-writing-window {
+  height: 350px;
+  width: 100%;
+  overflow: scroll;
+  font-family: "Lucida Console", Monaco, monospace;
+  margin: 8px;
+  padding: 8px;
+  resize: vertical;
+}
+
+#query-reults {
+  height: 200px;
+  width: 100%;
+  overflow: scroll;
+  font-family: "Lucida Console", Monaco, monospace;
+  margin: 8px;
+  padding: 8px;
+}
+
+#query-results-btn-row {
+  margin-bottom:3px;
+}
+
+.query-name {
+  /*margin: 2px 2px 2px 2px;*/
+  padding: 3px;
+}
+
+.query-name a:hover, .query-name:hover, .query-name-selected {
+  background-color: DarkGrey;
+  color: black;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 1.1em;
+}
+
+.query-list {
+  margin-top: 3px;
+  overflow:auto;
+  max-height: 780px;
+}
+
+#query-btn-row {
+  margin: 3px;
+}
+
+#query-display-name {
+  min-width: 100px;
+  width: 70%;
+}
+
+#query-save-response {
+  margin: 0px 0px 0px 15px;
 }

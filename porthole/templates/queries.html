@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %} Porthole - Queries {% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-sm-3" id="panel-viewer">
+      <div class="row">
+        <ul class="nav nav-tabs">
+          <li class="active" id="queries-tab"><a href="#">Queries</a></li>
+          <li  id="connections-tab"><a href="#">Connections</a></li>
+        </ul>
+      </div>
+      <!-- Queries Tab ##################################################### -->
+      <div class="row">
+        <div id="queries-viewer">
+          <div class="row" id="query-btn-row" style="display:none">
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-primary" id="edit-query">Edit Query</button>
+              <button type="button" class="btn btn-primary">Delete Query</button>
+            </div>
+          </div>
+          <div class="well" id="query-list">
+            {% for query in all_queries %}
+              <a href="#"><div class="row query-name" id="{{query}}">{{query}}</div></a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <!-- Connections Tab ################################################# -->
+      <div class="row">
+        <div id="schema-viewer"  style="display:none">
+          <p>
+            Select Connection:
+          </p>
+          <div class="row">
+            <select class="form-control" id="connection-selection" >
+              <option>None Selected</option>
+              {% for connection in connections %}
+                <option value="{{connection}}">{{connection}}</option>
+              {%endfor%}
+            </select>
+          </div>
+          <div class="row" id="connect-btn-row" style="display:none">
+            <div class="col-sm-8">
+              <button class="btn btn-primary" id="query-connect">Connect</button>
+            </div>
+            <div class="col-sm-4" id="connection-message"></div>
+          </div>
+          <div id="table-column-results" style="display:none">
+            <div class="row">
+              <h4>Tables</h4>
+            </div>
+            <div class="row">
+              <div class="well pre-scrollable" id="connection-tables">
+              </div>
+            </div>
+            <div class="row">
+              <h4>Columns</h4>
+            </div>
+            <div class="row">
+              <div class="well pre-scrollable" id="connection-columns">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-9">
+    <!-- Query Writing Panel ############################################### -->
+      <div class="row">
+        <div class="col-sm-5">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-primary"id="clear-query">New Query</button>
+            <button type="button" class="btn btn-primary"id="save-query">Save Query</button>
+          </div>
+        </div>
+        <div class="col-sm-2">
+          <h4> Query Name: </h4>
+        </div>
+        <div class="col-sm-5">
+          <input type="text" placeholder="New Query" class="form-control" id="query-display-name"/>
+        </div>
+      </div>
+      <div class="row">
+        <p id="query-save-response" style="display:none"></p>
+      </div>
+      <div class="row">
+        <textarea id="query-writing-window" placeholder="Enter query here"></textarea>
+      </div>
+      <div class="row" id="query-results-btn-row">
+        <div class="col-sm-3">
+          <button class="btn btn-primary" id="view-query-results">View Query Results</button>
+        </div>
+        <div class="col-sm-3">
+          <select class="form-control" id="query-limit-selection">
+            <option value="limit 5" selected>limit 5</option>
+            <option value="limit 50">limit 50</option>
+            <option value="limit 500">limit 500</option>
+            <option value="limit 5000">limit 5,000</option>
+            <option value="no limit">no limit</option>
+          </select>
+        </div>
+      </div>
+      <!-- Query Results Panel ############################################# -->
+      <div class="row well" id="query-results">
+        <table>
+
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock%}

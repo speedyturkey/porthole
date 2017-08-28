@@ -4,14 +4,16 @@
 # For the relative filepaths to work, this script must be run from the outer porthole directory.
 
 
-from flask import Flask, render_template, flash
+from flask import Flask, render_template, flash, jsonify, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, RadioField, SelectField
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
 from connections import ConnectionManager
-# import connections
+from queries import QueryReader
+import os
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'flarp'
@@ -95,7 +97,7 @@ def add_connection(dict):
 # If a section name matches the provided string, then that section and all its options are removed.
 # It is removed from the connections option in the Default section, if present.
 def delete_connection(connection_name):
-    print(connection_name)
+    # print(connection_name)
     parser.read(config_file)
     connections = parser.get('Default', 'connections')
     connections_list = connections.split(", ")
@@ -121,6 +123,26 @@ def read_config():
         for option in options:
             all_config_options[section].update({option : parser.get(section, option)})
     return all_config_options
+
+def get_queries():
+    parser.read(config_file)
+    query_path = parser.get('Default', 'query_path')
+    all_queries = []
+    for file_name in os.listdir(query_path):
+        if file_name.endswith('.sql'):
+            no_extension = os.path.splitext(file_name)[0]
+            all_queries.append(no_extension)
+    return all_queries
+
+def save_query(query_name, sql):
+    parser.read(config_file)
+    query_path = parser.get('Default', 'query_path')# + query_name + '.sql'
+    # fn = os.path.join(os.path.dirname(__file__), query_path)
+    file_path = os.path.join(query_path, query_name + '.sql')
+    with open(file_path, 'w') as f:
+        f.write(sql)
+
+
 
 # This class defines the form used to add and edit connection sections to the config file.
 class ConnectionForm(FlaskForm):
@@ -167,10 +189,10 @@ def config():
     connection_form = ConnectionForm()
     connection_choices = [(c,c) for c in connections]
     connection_choice_additions = [('None Selected','None Selected')]
-    print(connection_choices + connection_choice_additions)
+    # print(connection_choices + connection_choice_additions)
     config_form.default_database.choices = connection_choices + connection_choice_additions
     config_form.logging_server.choices = connection_choices + connection_choice_additions
-    rdbms_options = ['MySQL', 'SQLite']
+    rdbms_options = ['mysql', 'sqlite']
     rdbms_choices = [(i,i) for i in rdbms_options]
     connection_form.rdbms.choices = rdbms_choices
 
@@ -179,7 +201,7 @@ def config():
         flash('Settings Updated')
         all_config_options=read_config()
         connections = all_config_options["Default"]["connections"].split(", ")
-        print(config_form.data)
+        # print(config_form.data)
         return render_template("settings.html", config_form=config_form
                                             , connection_form=connection_form
                                             , all_config_options=all_config_options
@@ -191,7 +213,7 @@ def config():
             delete_connection(connection_form.data['connection_name'])
         else:
             add_connection(connection_form.data)
-        print(connection_form.data)
+        # print(connection_form.data)
         all_config_options=read_config()
         connections = all_config_options["Default"]["connections"].split(", ")
         return render_template("settings.html", config_form=config_form
@@ -206,7 +228,7 @@ def config():
                                         , connections=connections
                                         , rdbms_options=rdbms_options)
 
-@app.route('/api/test_connection/<connection_name>', methods=['GET', 'POST'])
+@app.route('/api/test_connection/<connection_name>', methods=['GET'])
 def test_connection(connection_name):
     conn = ConnectionManager(db = connection_name)
     try:
@@ -215,6 +237,42 @@ def test_connection(connection_name):
         return 'Connected Successfully'
     except:
         return 'Failed to Connect'
+
+@app.route('/api/schema_info/<connection_name>', methods=['GET'])
+def schema_info(connection_name):
+    conn = ConnectionManager(db = connection_name)
+    try:
+        conn.connect()
+        sql = """SELECT table_name, table_schema, column_name
+                FROM information_schema.columns
+                WHERE table_schema <> 'information_schema'
+                ORDER BY table_schema, table_name, column_name;"""
+        results = conn.conn.execute(sql)
+        resultset = [dict(row) for row in results]
+        conn.close()
+        return jsonify(resultset)
+    except:
+        return 'Failed to Connect'
+
+@app.route('/api/queries/<query_name>', methods=['GET', 'POST'])
+def get_query_sql(query_name):
+    if request.method == 'GET':
+        query = QueryReader(filename=query_name)
+        query.read()
+        return query.sql
+    elif request.method == 'POST':
+        sql = request.form['raw_sql']
+        query_name = request.form['query_name']
+        save_query(query_name=query_name, sql=sql)
+        return 'success'
+
+
+@app.route('/queries', methods=['GET', 'POST'])
+def queries():
+    all_config_options=read_config()
+    all_queries = get_queries()
+    connections = all_config_options["Default"]["connections"].split(", ")
+    return render_template('queries.html', connections=connections, all_queries=all_queries)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,9 @@
 import os, re, sys, json
 from decimal import Decimal
 from datetime import date
-from .app import config
-from .connections import ConnectionManager
-from .logger import PortholeLogger
+from porthole.app import config
+from porthole.connections import ConnectionManager
+from porthole.logger import PortholeLogger
 
 logger = PortholeLogger(name=__name__)
 

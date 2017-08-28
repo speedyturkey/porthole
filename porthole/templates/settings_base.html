@@ -23,3 +23,12 @@
   </div>
 </div>
 {% endblock%}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  var allConfigOptions = {{ all_config_options|tojson }};
+  // console.log(allConfigOptions);
+</script>
+
+{% endblock %}
