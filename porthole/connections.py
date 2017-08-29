@@ -1,6 +1,6 @@
 import pymysql
 from sqlalchemy import create_engine
-from porthole.app import config
+from .app import config
 
 
 class ConnectionManager():

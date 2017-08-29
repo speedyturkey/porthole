@@ -10,14 +10,11 @@ from wtforms import StringField, SubmitField, PasswordField, RadioField, SelectF
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
-from connections import ConnectionManager
-# import connections
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'flarp'
+from .connections import ConnectionManager
+from . import gui_app
 
 #flask_bootstrap fills in some boilerplate in the template
-Bootstrap(app)
+Bootstrap(gui_app)
 
 #ConfigParser helps with manipulating config files
 parser = ConfigParser()
@@ -159,7 +156,7 @@ class ConfigForm(FlaskForm):
 # select inputs in the rendered form.
 # This endpoint renders two forms.  If either form is submitted and validated, it will update
 # the config file and refresh the page showing the updated values.
-@app.route('/config', methods=['GET', 'POST'])
+@gui_app.route('/config', methods=['GET', 'POST'])
 def config():
     all_config_options=read_config()
     connections = all_config_options["Default"]["connections"].split(", ")
@@ -206,7 +203,7 @@ def config():
                                         , connections=connections
                                         , rdbms_options=rdbms_options)
 
-@app.route('/api/test_connection/<connection_name>', methods=['GET', 'POST'])
+@gui_app.route('/api/test_connection/<connection_name>', methods=['GET', 'POST'])
 def test_connection(connection_name):
     conn = ConnectionManager(db = connection_name)
     try:
@@ -218,4 +215,4 @@ def test_connection(connection_name):
 
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    pass
