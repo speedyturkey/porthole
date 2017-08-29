@@ -161,12 +161,32 @@ $( document ).ready(function() {
     } else if(rawSql == ''){
       $('#query-save-response').text('Query Not Saved: Query cannot be blank.');
     } else {
-      $.post($SCRIPT_ROOT + '/api/queries/' + encodeURI(queryId), {'raw_sql': rawSql, 'query_name': queryId}, function(result){
+      $.post($SCRIPT_ROOT + '/api/queries/' + encodeURI(queryId), {'raw_sql': rawSql, 'query_name': queryId, 'delete_query': 'No'}, function(results){
         $('#query-save-response').text('Saved Succesfully');
+        $('#query-list').text('');
+        for (var result of results){
+          $('#query-list').append('<a href="#"><div class="row query-name" id="'+result+'">'+result+'</div></a>')
+        }
       }).fail(function(){
         $('#query-save-response').text('Error: Save Failed');
       });
     }
+  });
+
+  $('#delete-query').click(function(){
+    var queryId = '';
+    queryId = $('#query-list').find('div.query-name-selected').attr('id');
+    $('#query-save-response').show();
+    $.post($SCRIPT_ROOT + '/api/queries/' + encodeURI(queryId), {'delete_query': 'Yes', 'query_name': queryId, 'raw_sql': 'none'}, function(results){
+      $('#query-save-response').text('Deleted Succesfully');
+      $('#query-list').text('');
+      $('#clear-query').click();
+      for (var result of results){
+        $('#query-list').append('<a href="#"><div class="row query-name" id="'+result+'">'+result+'</div></a>')
+      }
+    }).fail(function(){
+      $('#query-save-response').text('Error: Delete Failed');
+    });
   });
 
 

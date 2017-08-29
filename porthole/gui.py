@@ -10,16 +10,16 @@ from wtforms import StringField, SubmitField, PasswordField, RadioField, SelectF
 from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
-from connections import ConnectionManager
-from queries import QueryReader
+from .connections import ConnectionManager
+from .queries import QueryReader
 import os
 
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'flarp'
+gui_app = Flask(__name__)
+gui_app.config['SECRET_KEY'] = 'flarp'
 
 #flask_bootstrap fills in some boilerplate in the template
-Bootstrap(app)
+Bootstrap(gui_app)
 
 #ConfigParser helps with manipulating config files
 parser = ConfigParser()
@@ -141,7 +141,11 @@ def save_query(query_name, sql):
     with open(file_path, 'w') as f:
         f.write(sql)
 
-
+def delete_query(query_name):
+    parser.read(config_file)
+    query_path = parser.get('Default', 'query_path')
+    file_path = os.path.join(query_path, query_name + '.sql')
+    os.remove(file_path)
 
 # This class defines the form used to add and edit connection sections to the config file.
 class ConnectionForm(FlaskForm):
@@ -180,7 +184,7 @@ class ConfigForm(FlaskForm):
 # select inputs in the rendered form.
 # This endpoint renders two forms.  If either form is submitted and validated, it will update
 # the config file and refresh the page showing the updated values.
-@app.route('/config', methods=['GET', 'POST'])
+@gui_app.route('/config', methods=['GET', 'POST'])
 def config():
     all_config_options=read_config()
     connections = all_config_options["Default"]["connections"].split(", ")
@@ -227,7 +231,7 @@ def config():
                                         , connections=connections
                                         , rdbms_options=rdbms_options)
 
-@app.route('/api/test_connection/<connection_name>', methods=['GET'])
+@gui_app.route('/api/test_connection/<connection_name>', methods=['GET'])
 def test_connection(connection_name):
     conn = ConnectionManager(db = connection_name)
     try:
@@ -237,7 +241,7 @@ def test_connection(connection_name):
     except:
         return 'Failed to Connect'
 
-@app.route('/api/schema_info/<connection_name>', methods=['GET'])
+@gui_app.route('/api/schema_info/<connection_name>', methods=['GET'])
 def schema_info(connection_name):
     conn = ConnectionManager(db = connection_name)
     try:
@@ -253,20 +257,24 @@ def schema_info(connection_name):
     except:
         return 'Failed to Connect'
 
-@app.route('/api/queries/<query_name>', methods=['GET', 'POST'])
+@gui_app.route('/api/queries/<query_name>', methods=['GET', 'POST'])
 def get_query_sql(query_name):
     if request.method == 'GET':
         query = QueryReader(filename=query_name)
         query.read()
         return query.sql
     elif request.method == 'POST':
-        sql = request.form['raw_sql']
         query_name = request.form['query_name']
-        save_query(query_name=query_name, sql=sql)
-        return 'success'
+        if request.form['delete_query'] == 'Yes':
+            delete_query(query_name)
+        else:
+            sql = request.form['raw_sql']
+            save_query(query_name=query_name, sql=sql)
+        all_queries = get_queries()
+        return jsonify(all_queries)
 
 
-@app.route('/queries', methods=['GET', 'POST'])
+@gui_app.route('/queries', methods=['GET', 'POST'])
 def queries():
     all_config_options=read_config()
     all_queries = get_queries()
@@ -275,4 +283,4 @@ def queries():
 
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    gui_app.run(debug = True)
