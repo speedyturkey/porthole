@@ -118,11 +118,6 @@ report.execute()
 
 ```
 
-| Table                       | Required Attributes                   | Optional Attributes   | Notes                                                                  |
-|-----------------------------|---------------------------------------|-----------------------|------------------------------------------------------------------------|
-| automated_reports           | report_name; active                   |                       |                                                                        |
-| automated_report_contacts   | email_address                         | first_name; last_name |                                                                        |
-| automated_report_recipients | report_id; contact_id; recipient_type |                       | Every report requires at least one record where recipient_type = 'to'. |
 
 ## Development
 

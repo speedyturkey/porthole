@@ -178,7 +178,7 @@ class DatabaseLogger(Loggable):
         self.report_log = report_log
 
     def finalize_record(self, errors=None):
-        "Update log at conclusion of report execution to indicate success/failure."
+        """Update log at conclusion of report execution to indicate success/failure."""
         if errors:
             data_to_update = {'completed_at': TimeHelper.now(string=False),
                                 'success': 0,
@@ -190,6 +190,7 @@ class DatabaseLogger(Loggable):
             self.report_log.update(data_to_update)
         except:
             self.log_error("Unable to finalize log record.")
+
 
 class ReportActiveChecker(Loggable):
 
@@ -222,6 +223,7 @@ class ReportActiveChecker(Loggable):
             self.log_error(error)
             raise Exception(error)
 
+
 class RecipientsChecker(Loggable):
     def __init__(self, cm, report_name, log_to=[]):
         self.cm = cm
@@ -231,7 +233,7 @@ class RecipientsChecker(Loggable):
         super().__init__(log_to=log_to)
 
     def get_recipients(self):
-        "Performs lookup in database for report recipients based on report name."
+        """Performs lookup in database for report recipients based on report name."""
         statement = select([automated_report_contacts.c.email_address,
                             automated_report_recipients.c.recipient_type])\
                         .select_from(automated_reports\
@@ -255,6 +257,7 @@ class RecipientsChecker(Loggable):
             logger.error(error)
             raise KeyError("No primary recipient found for {}".format(self.report_name))
         return self.to_recipients, self.cc_recipients
+
 
 class ReportErrorNotifier(object):
 
