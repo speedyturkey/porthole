@@ -136,8 +136,7 @@ def get_queries():
 
 def save_query(query_name, sql):
     parser.read(config_file)
-    query_path = parser.get('Default', 'query_path')# + query_name + '.sql'
-    # fn = os.path.join(os.path.dirname(__file__), query_path)
+    query_path = parser.get('Default', 'query_path')
     file_path = os.path.join(query_path, query_name + '.sql')
     with open(file_path, 'w') as f:
         f.write(sql)
