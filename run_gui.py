@@ -1,2 +1,2 @@
-from porthole import gui_app
-gui_app.run(debug=True)
+from porthole import gui
+gui.gui_app.run(debug=True)

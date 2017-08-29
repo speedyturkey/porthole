@@ -11,7 +11,10 @@ from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
 from .connections import ConnectionManager
-from . import gui_app
+# from . import gui_app
+
+gui_app = Flask('porthole')
+gui_app.config['SECRET_KEY'] = 'flarp'
 
 #flask_bootstrap fills in some boilerplate in the template
 Bootstrap(gui_app)
@@ -215,4 +218,4 @@ def test_connection(connection_name):
 
 
 if __name__ == '__main__':
-    pass
+    gui_app.run(debug=False)
