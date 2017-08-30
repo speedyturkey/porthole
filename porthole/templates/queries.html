@@ -13,18 +13,24 @@
         </ul>
       </div>
       <!-- Queries Tab ##################################################### -->
-      <div class="row">
-        <div id="queries-viewer">
+      <div id="queries-viewer">
+        <div class="row">
           <div class="row" id="query-btn-row" style="display:none">
             <div class="btn-group" role="group">
               <button type="button" class="btn btn-primary" id="edit-query">Edit Query</button>
               <button type="button" class="btn btn-primary" id="delete-query">Delete Query</button>
             </div>
           </div>
-          <div class="well" id="query-list">
+        </div>
+        <div class="row">
+          <div class="well pre-scrollable" id="query-list">
             {% for query in all_queries %}
               <a href="#"><div class="row query-name" id="{{query}}">{{query}}</div></a>
             {% endfor %}
+          </div>
+        </div>
+        <div class="row">
+          <div class="well pre-scrollable" id="query-display">
           </div>
         </div>
       </div>

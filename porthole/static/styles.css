@@ -108,8 +108,6 @@ body {
 
 .query-list {
   margin-top: 3px;
-  overflow:auto;
-  max-height: 780px;
 }
 
 #query-btn-row {
@@ -123,4 +121,8 @@ body {
 
 #query-save-response {
   margin: 0px 0px 0px 15px;
+}
+
+#query-display {
+  white-space: pre;
 }
