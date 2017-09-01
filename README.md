@@ -173,3 +173,4 @@ Execute the command `python run_tests.py`.
 ## Authors
 
 * **Billy McMonagle** - *Initial work* - [GitHub](https://github.com/speedyturkey)
+* **Ed Nunes** - [GitHub](https://github.com/nunie123)
