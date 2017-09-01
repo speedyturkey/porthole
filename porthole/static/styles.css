@@ -1,5 +1,5 @@
 body {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 
@@ -89,8 +89,8 @@ body {
   padding: 8px;
 }
 
-#query-results-btn-row {
-  margin-bottom:3px;
+#query-results-btn-row{
+  margin:3px 0px;
 }
 
 .query-name {
@@ -125,4 +125,18 @@ body {
 
 #query-display {
   white-space: pre;
+}
+
+#query-results {
+
+}
+
+#query-results-container {
+  overflow: scroll;
+  max-height: 500px;
+  margin:3px 0px;
+}
+
+#query-results td, #query-results th{
+  white-space: nowrap;
 }

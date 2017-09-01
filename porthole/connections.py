@@ -4,11 +4,12 @@ from .app import config
 
 
 class ConnectionManager():
-    def __init__(self, db=None):
+    def __init__(self, db=None, read_only=False):
         self.db = db
         self.config = config
         self.engine = None
         self.conn = None
+        self.read_only = read_only
         if db:
             self.unpack_params()
 

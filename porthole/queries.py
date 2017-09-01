@@ -4,6 +4,7 @@ from datetime import date
 from porthole.app import config
 from porthole.connections import ConnectionManager
 from porthole.logger import PortholeLogger
+from sqlalchemy.sql import text
 
 logger = PortholeLogger(name=__name__)
 
@@ -57,6 +58,14 @@ class QueryGenerator(object):
 
         if self.sql is None:
             self.construct_query()
+
+        if self.cm.read_only:
+            try:
+                stmt = text("SET SESSION TRANSACTION READ ONLY")
+                self.cm.conn.execute(stmt)
+            except Exception as e:
+                logger.exception(e)
+                raise RuntimeError("Unable to set session to Read Only")
 
         try:
             result_proxy = self.cm.conn.execute(self.sql)

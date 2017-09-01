@@ -11,7 +11,7 @@ from wtforms.validators import InputRequired
 from configparser import ConfigParser
 from flask_bootstrap import Bootstrap
 from .connections import ConnectionManager
-from .queries import QueryReader
+from .queries import QueryReader, QueryGenerator
 import os
 
 
@@ -273,8 +273,20 @@ def get_query_sql(query_name):
         all_queries = get_queries()
         return jsonify(all_queries)
 
+@gui_app.route('/api/execute_sql', methods=['POST'])
+def execute_sql():
+    sql = request.form['sql']
+    connection_name = request.form['connection_name']
+    cm = ConnectionManager(db = connection_name, read_only = True)
+    cm.connect()
+    query = QueryGenerator(cm=cm, sql=sql)
+    results = query.execute()
+    result_set = [dict(row) for row in results.result_data]
+    # print(result_set)
+    return jsonify(result_set)
 
-@gui_app.route('/queries', methods=['GET', 'POST'])
+
+@gui_app.route('/queries', methods=['GET'])
 def queries():
     all_config_options=read_config()
     all_queries = get_queries()

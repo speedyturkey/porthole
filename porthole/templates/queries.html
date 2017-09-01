@@ -50,7 +50,7 @@
           </div>
           <div class="row" id="connect-btn-row" style="display:none">
             <div class="col-sm-8">
-              <button class="btn btn-primary" id="query-connect">Connect</button>
+              <button class="btn btn-primary" id="refresh-connection">Refresh Connection</button>
             </div>
             <div class="col-sm-4" id="connection-message"></div>
           </div>
@@ -97,24 +97,31 @@
         <textarea id="query-writing-window" placeholder="Enter query here"></textarea>
       </div>
       <div class="row" id="query-results-btn-row">
-        <div class="col-sm-3">
+        <div class="form-inline">
+          <label>Connection:</label>
+          <select class="form-control" id="connection-selection-copy" >
+            <option>None Selected</option>
+            {% for connection in connections %}
+              <option value="{{connection}}">{{connection}}</option>
+            {%endfor%}
+          </select>
           <button class="btn btn-primary" id="view-query-results">View Query Results</button>
-        </div>
-        <div class="col-sm-3">
-          <select class="form-control" id="query-limit-selection">
+          <select class="form-control" id="query-limit-selection" style="display:none">
             <option value="limit 5" selected>limit 5</option>
             <option value="limit 50">limit 50</option>
             <option value="limit 500">limit 500</option>
             <option value="limit 5000">limit 5,000</option>
             <option value="no limit">no limit</option>
           </select>
+          <div id="query-error-notification"></div>
         </div>
       </div>
       <!-- Query Results Panel ############################################# -->
-      <div class="row well" id="query-results">
-        <table>
-
-        </table>
+      <div class="row">
+        <table id="query-result-headers" class="table"></table>
+      </div>
+      <div class="row" id="query-results-container">
+        <table id="query-results" class="table"></table>
       </div>
     </div>
   </div>

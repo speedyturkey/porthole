@@ -29,7 +29,6 @@ $( document ).ready(function() {
     $('#connection-form').show();
     $('#add-connection').text('Cancel');
     var connection = this.id.split('-')[1];
-    console.log(allConfigOptions);
     $('#connection_name').val(connection);
     $('#rdbms').val(allConfigOptions[connection]['rdbms']);
     $('#connection_host').val(allConfigOptions[connection]['host']);
@@ -48,7 +47,6 @@ $( document ).ready(function() {
 
   $('.test-connection').click(function(){
     var connection = this.id.split('-')[1];
-    console.log(connection);
     var testResultId = 'test-result-' + connection;
     $.get($SCRIPT_ROOT + '/api/test_connection/' + encodeURI(connection), function(result){
       $('#'+testResultId).text(result);
@@ -59,17 +57,14 @@ $( document ).ready(function() {
   $('#connection-selection').change(function(){
     var connection = '';
     connection = $('#connection-selection').val();
+    $('#connection-selection-copy').val(connection);
     $('#table-column-results').hide();
     $('#connection-message').text('');
-    $('query-connect').text('Connect');
     if(connection != 'None Selected'){
       $('#connect-btn-row').show();
     } else {
       $('#connect-btn-row').hide();
     }
-  })
-
-  $('#query-connect').click(function(){
     $('#connection-message').text('Connecting...');
     var connection = $('#connection-selection').val();
     $('#connection-columns').text('');
@@ -80,7 +75,6 @@ $( document ).ready(function() {
         var tables = [];
         schemas = getSchemas(result);     //function to get array of schemas in connection
         $('#connection-message').text('Connected');
-        $('#query-connect').text('Refresh Connection');
         $('#table-column-results').show();
         for (var schema of schemas){      //loop through each schema
           $('#connection-tables').append(
@@ -113,6 +107,17 @@ $( document ).ready(function() {
       }
     });
   });
+
+  $('#connection-selection-copy').change(function(){
+    var connection = '';
+    connection = $('#connection-selection-copy').val();
+    $('#connection-selection').val(connection);
+    $('#connection-selection').change();
+  });
+
+  $('#refresh-connection').click(function(){
+    $('#connection-selection').change();
+  })
 
   $('#queries-tab').click(function(){
     $('#queries-viewer').show();
@@ -196,6 +201,44 @@ $( document ).ready(function() {
     });
   });
 
+  $('#view-query-results').click(function(){
+    $('#query-error-notification').text('Processing...');
+    $('#query-results').text('');
+    var sql = '';
+    var connection = '';
+    var fieldNames;
+    var headerRow;
+    var tableRows;
+    sql = $('#query-writing-window').val();
+    connection = $('#connection-selection').val();
+    if(sql==''){
+      $('#query-error-notification').text('Error: No Query Provided')
+    } else if (connection =='None Selected'){
+      $('#query-error-notification').text('Error: No Connection Provided')
+    } else {
+      $.post($SCRIPT_ROOT + '/api/execute_sql', {'sql': sql, 'connection_name': connection}, function(results){
+        $('#query-error-notification').text('');
+        fieldNames = Object.keys(results[0]);
+        console.log('results length: '+results.length);
+        console.log('results[0]: '+results[0]);
+        console.log('filedNames: '+fieldNames);
+        headerRow = '<tr>';
+        for (var field of fieldNames){
+          headerRow += '<th>'+field+'</th>';
+        }
+        headerRow += '</tr>';
+        $('#query-results').append(headerRow);
+        for (var i=0; i<results.length; i++){
+          tableRows += '<tr>';
+          for (var field of fieldNames){
+            tableRows += '<td>'+results[i][field]+'</td>';
+          }
+          tableRows += '</tr>';
+        }
+        $('#query-results').append(tableRows);
+      });
+    }
+  });
 
 });
 
@@ -206,7 +249,6 @@ function getSchemas(arr){
   var uniqueSchemas = [];
   for (var i of arr){
     dupeSchemas.push(i['table_schema']);
-    //console.log(i);
   }
   uniqueSchemas = dupeSchemas.filter(uniqueFilter);
   return uniqueSchemas;
