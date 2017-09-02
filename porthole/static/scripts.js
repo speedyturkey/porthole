@@ -27,7 +27,6 @@ $( document ).ready(function() {
     $('#connection-form').show();
     $('#add-connection').text('Cancel');
     var connection = this.id.split('-')[1];
-    console.log(allConfigOptions);
     $('#connection_name').val(connection);
     $('#rdbms').val(allConfigOptions[connection]['rdbms']);
     $('#connection_host').val(allConfigOptions[connection]['host']);
@@ -46,12 +45,7 @@ $( document ).ready(function() {
 
   $('.test-connection').click(function(){
     var connection = this.id.split('-')[1];
-    console.log(connection);
     var testResultId = 'test-result-' + connection;
-    // $.ajax({
-    //   url:$SCRIPT_ROOT + '/api/test_connection/' + connection
-    //   dataType: 'text'
-    // });
     $.get($SCRIPT_ROOT + '/api/test_connection/' + connection, function(result){
       $('#'+testResultId).text(result);
     });
