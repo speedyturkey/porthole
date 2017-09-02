@@ -28,68 +28,70 @@ config_file = 'config/config.ini'
 
 # This function takes a dictionary and updates the config file in the base directory.
 # This function checks for specific keys and only updates when key exists and value is not an empty string.
-def edit_config(dict):
+def edit_config(settings_dict):
     parser.read(config_file)
-    if 'default_base_file_path' in dict and dict['default_base_file_path'] != '':
-        parser.set('Default', 'base_file_path', dict['default_base_file_path'])
-    if 'default_query_path' in dict and dict['default_query_path'] != '':
-        parser.set('Default', 'query_path', dict['default_query_path'])
-    if 'default_database' in dict and dict['default_database'] != '':
-        parser.set('Default', 'database', dict['default_database'])
-    if 'default_notification_recipient' in dict and dict['default_notification_recipient'] != '':
-        parser.set('Default', 'notification_recipient', dict['default_notification_recipient'])
-    if 'email_username' in dict and dict['email_username'] != '':
-        parser.set('Email', 'username', dict['email_username'])
-    if 'email_password' in dict and dict['email_password'] != '':
-        parser.set('Email', 'password', dict['email_password'])
-    if 'email_host' in dict and dict['email_host'] != '':
-        parser.set('Email', 'host', dict['email_host'])
-    if 'email_disabled' in dict and str(dict['email_disabled']) != '':
-        parser.set('Email', 'disabled', str(dict['email_disabled']))
-    if 'email_signature' in dict and dict['email_signature'] != '':
-        parser.set('Email', 'signature', dict['email_signature'])
-    if 'logging_server' in dict and dict['logging_server'] != '':
-        parser.set('Logging', 'server', dict['logging_server'])
-    if 'logging_to_file' in dict and dict['logging_to_file'] != '':
-        parser.set('Logging', 'log_to_file', dict['logging_to_file'])
-    if 'logging_file' in dict and dict['logging_file'] != '':
-        parser.set('Logging', 'logfile', dict['logging_file'])
-    if 'logging_db' in dict and dict['logging_db'] != '':
-        parser.set('Logging', 'db', dict['logging_db'])
-    if 'debug_mode' in dict and dict['debug_mode'] != '':
-        parser.set('Debug', 'debug_mode', dict['debug_mode'])
-    if 'debug_recipients' in dict and dict['debug_recipients'] != '':
-        parser.set('Debug', 'debug_recipients', dict['debug_recipients'])
-    if 'admin_email' in dict and dict['admin_email'] != '':
-        parser.set('Admin', 'admin_email', dict['admin_email'])
+    if 'default_base_file_path' in settings_dict and settings_dict['default_base_file_path'] != '':
+        parser.set('Default', 'base_file_path', settings_dict['default_base_file_path'])
+    if 'default_query_path' in settings_dict and settings_dict['default_query_path'] != '':
+        parser.set('Default', 'query_path', settings_dict['default_query_path'])
+    if 'default_database' in settings_dict and settings_dict['default_database'] != '':
+        parser.set('Default', 'database', settings_dict['default_database'])
+    if 'default_notification_recipient' in settings_dict and settings_dict['default_notification_recipient'] != '':
+        parser.set('Default', 'notification_recipient', settings_dict['default_notification_recipient'])
+    if 'email_username' in settings_dict and settings_dict['email_username'] != '':
+        parser.set('Email', 'username', settings_dict['email_username'])
+    if 'email_password' in settings_dict and settings_dict['email_password'] != '':
+        parser.set('Email', 'password', settings_dict['email_password'])
+    if 'email_host' in settings_dict and settings_dict['email_host'] != '':
+        parser.set('Email', 'host', settings_dict['email_host'])
+    if 'email_disabled' in settings_dict and str(settings_dict['email_disabled']) != '':
+        parser.set('Email', 'disabled', str(settings_dict['email_disabled']))
+    if 'email_signature' in settings_dict and settings_dict['email_signature'] != '':
+        parser.set('Email', 'signature', settings_dict['email_signature'])
+    if 'logging_server' in settings_dict and settings_dict['logging_server'] != '':
+        parser.set('Logging', 'server', settings_dict['logging_server'])
+    if 'logging_to_file' in settings_dict and settings_dict['logging_to_file'] != '':
+        parser.set('Logging', 'log_to_file', settings_dict['logging_to_file'])
+    if 'logging_file' in settings_dict and settings_dict['logging_file'] != '':
+        parser.set('Logging', 'logfile', settings_dict['logging_file'])
+    if 'logging_db' in settings_dict and settings_dict['logging_db'] != '':
+        parser.set('Logging', 'db', settings_dict['logging_db'])
+    if 'debug_mode' in settings_dict and settings_dict['debug_mode'] != '':
+        parser.set('Debug', 'debug_mode', settings_dict['debug_mode'])
+    if 'debug_recipients' in settings_dict and settings_dict['debug_recipients'] != '':
+        parser.set('Debug', 'debug_recipients', settings_dict['debug_recipients'])
+    if 'admin_email' in settings_dict and settings_dict['admin_email'] != '':
+        parser.set('Admin', 'admin_email', settings_dict['admin_email'])
     with open(config_file, 'w') as configfile:
         parser.write(configfile)
 
-# This function takes a dictionary and updates the config file in the base directory.
+# This function takes a settings_dictionary and updates the config file in the base directory.
 # This function will add a new section to the config file if the provided section name (connection_name)
 # is unique.  Otherwise it will update the section with the options provided.  If the section is new
 # the connection_name will be appended to the connections option in the Default section (this assists
 # in iteration over the connection sections).  Blank, extra, and missing options are ignored.
-def add_connection(dict):
+def add_connection(settings_dict):
     parser.read(config_file)
-    if 'connection_name' in dict and dict['connection_name'] != '':
-        connection_name = dict['connection_name']
+    if 'connection_name' in settings_dict and settings_dict['connection_name'] != '':
+        connection_name = settings_dict['connection_name']
         connections = parser.get('Default', 'connections')
+        if connection_name in ['Default', 'Email', 'Debug', 'Logging', 'Admin']:
+            return 'Invalid connection name.'
         if connection_name not in connections.split(", "):
             parser.add_section(connection_name)
             parser.set('Default', 'connections', connections + ', ' + connection_name)
-    if 'rdbms' in dict and dict['rdbms'] != '':
-        parser.set(connection_name, 'rdbms', dict['rdbms'])
-    if 'connection_host' in dict and dict['connection_host'] != '':
-        parser.set(connection_name, 'host', dict['connection_host'])
-    if 'connection_port' in dict and dict['connection_port'] != '':
-        parser.set(connection_name, 'port', dict['connection_port'])
-    if 'connection_user' in dict and dict['connection_user'] != '':
-        parser.set(connection_name, 'user', dict['connection_user'])
-    if 'connection_password' in dict and dict['connection_password'] != '':
-        parser.set(connection_name, 'password', dict['connection_password'])
-    if 'schema' in dict and dict['schema'] != '':
-        parser.set(connection_name, 'schema', dict['schema'])
+    if 'rdbms' in settings_dict and settings_dict['rdbms'] != '':
+        parser.set(connection_name, 'rdbms', settings_dict['rdbms'])
+    if 'connection_host' in settings_dict and settings_dict['connection_host'] != '':
+        parser.set(connection_name, 'host', settings_dict['connection_host'])
+    if 'connection_port' in settings_dict and settings_dict['connection_port'] != '':
+        parser.set(connection_name, 'port', settings_dict['connection_port'])
+    if 'connection_user' in settings_dict and settings_dict['connection_user'] != '':
+        parser.set(connection_name, 'user', settings_dict['connection_user'])
+    if 'connection_password' in settings_dict and settings_dict['connection_password'] != '':
+        parser.set(connection_name, 'password', settings_dict['connection_password'])
+    if 'schema' in settings_dict and settings_dict['schema'] != '':
+        parser.set(connection_name, 'schema', settings_dict['schema'])
     with open(config_file, 'w') as configfile:
         parser.write(configfile)
 
@@ -192,7 +194,6 @@ def config():
     connection_form = ConnectionForm()
     connection_choices = [(c,c) for c in connections]
     connection_choice_additions = [('None Selected','None Selected')]
-    # print(connection_choices + connection_choice_additions)
     config_form.default_database.choices = connection_choices + connection_choice_additions
     config_form.logging_server.choices = connection_choices + connection_choice_additions
     rdbms_options = ['mysql', 'sqlite']
@@ -204,7 +205,6 @@ def config():
         flash('Settings Updated')
         all_config_options=read_config()
         connections = all_config_options["Default"]["connections"].split(", ")
-        # print(config_form.data)
         return render_template("settings.html", config_form=config_form
                                             , connection_form=connection_form
                                             , all_config_options=all_config_options
@@ -216,7 +216,6 @@ def config():
             delete_connection(connection_form.data['connection_name'])
         else:
             add_connection(connection_form.data)
-        # print(connection_form.data)
         all_config_options=read_config()
         connections = all_config_options["Default"]["connections"].split(", ")
         return render_template("settings.html", config_form=config_form
@@ -282,7 +281,6 @@ def execute_sql():
     query = QueryGenerator(cm=cm, sql=sql)
     results = query.execute()
     result_set = [dict(row) for row in results.result_data]
-    # print(result_set)
     return jsonify(result_set)
 
 
