@@ -4,3 +4,7 @@ dependencies:
   - pymysql
   - xlsxwriter
   - SQLAlchemy
+  - pip:
+    - flask-bootstrap==3.3.7.1
+    - Flask-WTF==0.14.2
+    - Flask==0.12.2

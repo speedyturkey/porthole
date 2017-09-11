@@ -12,7 +12,7 @@ from tests.test_components import TestReportWriter, TestReportActiveChecker
 from tests.test_filters import TestResultFilter
 # Query Handlers
 # Time Helper
-# XLSX
+from tests.test_WorkbookBuilder import TestWorkbookBuilder
 
 # Disable
 def blockPrint():
@@ -55,7 +55,8 @@ def main():
                             TestQueries,
                             TestReportWriter,
                             TestReportActiveChecker,
-                            TestResultFilter
+                            TestResultFilter,
+                            TestWorkbookBuilder
                             ]
 
     # Setup
