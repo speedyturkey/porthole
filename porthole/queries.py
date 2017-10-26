@@ -14,6 +14,7 @@ class QueryResult(object):
         self.result_count = result_count
         self.field_names = field_names
         self.result_data = result_data
+        self.field_index = {field: idx for idx, field in enumerate(field_names)}
 
     def json_converter(self, obj):
         "Required to convert datatypes not otherwise json serializable."
@@ -35,6 +36,13 @@ class QueryResult(object):
         contents = self.as_dict()
         with open(filename, 'w') as f:
             json.dump(contents, f, default=self.json_converter)
+
+    def map_function_to_field(self, field, func):
+        idx = self.field_index.get(field)
+        if idx is None:
+            raise IndexError("Field name {} not found.".format(field))
+        for row in self.result_data:
+            row[idx] = func(row[idx])
 
 
 class QueryGenerator(object):

@@ -15,6 +15,13 @@ class TestQueries(unittest.TestCase):
         self.assertEqual(d[0]['DOB'], '1988-04-24')
         os.unlink(filename)
 
+    def test_queryresult_map(self):
+        result = QueryResult(field_names=headers, result_data=data)
+        with self.assertRaises(IndexError):
+            result.map_function_to_field('NOTEXIST', lambda txt: txt.upper())
+        result.map_function_to_field('Name', lambda txt: txt.upper())
+        self.assertEqual('BILLY', result.result_data[0][0])
+
     def test_queryreader_no_params(self):
         "A QueryReader can be instantiated when no paramters are required."
         s = QueryReader(filename='tests/test_query_no_params')
