@@ -18,6 +18,7 @@ class ConnectionManager():
         self.db_port = int(self.config[self.db].get('port', 0))
         self.db_user = self.config[self.db].get('user')
         self.db_password = self.config[self.db].get('password')
+        self.database = self.config[self.db].get('database')
         self.schema = self.config[self.db].get('schema')
 
     def connect(self):
@@ -36,6 +37,8 @@ class ConnectionManager():
             return create_engine('sqlite:///{db_host}'.format(**self.__dict__))
         elif self.rdbms == 'mysql':
             return create_engine('mysql+pymysql://{db_user}:{db_password}@{db_host}'.format(**self.__dict__))
+        elif self.rdbms == 'postgresql':
+            return create_engine('postgresql://{db_user}:{db_password}@{db_host}/{database}'.format(**self.__dict__))
         else:
             raise ValueError("Unsupported RDBMS: {}".format(self.rdbms))
 
