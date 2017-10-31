@@ -77,14 +77,17 @@ class TestGenericReport(unittest.TestCase):
                                 , report_title='Test Report - Active'
                                 )
         report.send_if_blank = False
+
+        report.build_file()
         report.send_email = MethodType(mocked_send_email, report)
         report.get_recipients()
         report.subject = "test_send_if_blank"
         report.message = "test_send_if_blank"
         report.build_and_send_email()
         self.assertEqual(report.record_count, 0)
+        self.assertEqual(report.report_writer.record_count, 0)
         self.assertFalse(report.email_sent)
-        report.record_count = 1
+        report.report_writer.record_count += 1
         report.build_and_send_email()
         self.assertTrue(report.email_sent)
         report.db_logger.finalize_record()
