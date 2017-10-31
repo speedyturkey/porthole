@@ -191,10 +191,16 @@ class GenericReport(BasicReport, Loggable):
         self.report_name = report_name
         self.logging_enabled = logging_enabled
         self.send_if_blank = send_if_blank
-        self.record_count = 0
         self.check_if_active()
         if self.active:
             self.initialize_db_logger()
+
+    @property
+    def record_count(self):
+        if self.report_writer:
+            return self.report_writer.record_count
+        else:
+            return 0
 
     def initialize_db_logger(self):
         self.db_logger = DatabaseLogger( cm=self.get_conn(self.default_db),
