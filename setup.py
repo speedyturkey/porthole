@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='porthole',
-      version='0.3.8',
+      version='0.3.9',
       description='An automated reporting package.',
       author='Billy McMonagle',
       author_email='speedyturkey@gmail.com',
@@ -9,6 +9,7 @@ setup(name='porthole',
       packages=['porthole'],
       install_requires=[
                         'pymysql',
+                        'psycopg2',
                         'xlsxwriter',
                         'SQLAlchemy'
                     ],
