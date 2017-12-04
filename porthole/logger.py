@@ -1,7 +1,8 @@
 import logging
 from .app import config
 
-class PortholeLogger():
+
+class PortholeLogger(object):
     """
     Logger class. Log to console by default with optional
     logging to file.
@@ -13,10 +14,10 @@ class PortholeLogger():
     DEFAULT_FORMAT = '%(levelname)s -- %(asctime)s -- %(name)s -- %(message)s'
     DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-    def __init__(self, name, fmt=DEFAULT_FORMAT, datefmt=DEFAULT_DATE_FORMAT):
+    def __init__(self, name, logfile=None, fmt=DEFAULT_FORMAT, datefmt=DEFAULT_DATE_FORMAT):
         # Get config values
-        logfile = config['Logging'].get('logfile')
         log_to_file = config['Logging'].getboolean('log_to_file')
+        default_logfile = config['Logging'].get('logfile')
 
         # Create Logger, Formatter, and StreamHandler
         logger = logging.getLogger(name)
@@ -27,6 +28,8 @@ class PortholeLogger():
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
         if log_to_file:
+            logfile = logfile or default_logfile
+
             file_handler = logging.FileHandler(logfile)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)

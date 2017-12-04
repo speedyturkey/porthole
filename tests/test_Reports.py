@@ -77,10 +77,6 @@ class TestGenericReport(unittest.TestCase):
                                 , report_title='Test Report - Active'
                                 )
         report.send_if_blank = False
-<<<<<<< HEAD
-
-=======
->>>>>>> dev
         report.build_file()
         report.send_email = MethodType(mocked_send_email, report)
         report.get_recipients()
