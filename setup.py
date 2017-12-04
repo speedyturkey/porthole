@@ -9,6 +9,7 @@ setup(name='porthole',
       packages=['porthole'],
       install_requires=[
                         'pymysql',
+                        'psycopg2',
                         'xlsxwriter',
                         'SQLAlchemy'
                     ],
