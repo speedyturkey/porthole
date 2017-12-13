@@ -7,8 +7,9 @@ from .logger import PortholeLogger
 
 logger = PortholeLogger(name=__name__)
 
+
 class QueryResult(object):
-    "Represent result data from an executed query. Includes capability to write results as json."
+    """Represent result data from an executed query. Includes capability to write results as json."""
 
     def __init__(self, result_count=None, field_names=None, result_data=None):
         self.result_count = result_count
@@ -17,7 +18,7 @@ class QueryResult(object):
         self.field_index = {field: idx for idx, field in enumerate(field_names)}
 
     def json_converter(self, obj):
-        "Required to convert datatypes not otherwise json serializable."
+        """Required to convert datatypes not otherwise json serializable."""
         if isinstance(obj, Decimal):
             return float(obj)
         elif isinstance(obj, date):
@@ -26,11 +27,11 @@ class QueryResult(object):
             raise TypeError("Cannot convert provided type {}".format(type(obj)))
 
     def as_dict(self):
-        "Returns contents as list of dictionaries with headers as keys."
+        """Returns contents as list of dictionaries with headers as keys."""
         if self.field_names and self.result_data:
             return [dict(zip(self.field_names, row)) for row in self.result_data]
         else:
-            raise ValueError("Both field_names and result_data attributes are required to convert query results to dictionary.")
+            raise ValueError("Both field_names and result_data attributes are required.")
 
     def write_to_json(self, filename):
         contents = self.as_dict()
@@ -46,12 +47,13 @@ class QueryResult(object):
 
 
 class QueryGenerator(object):
-    "Execute SQL query and return results"
+    """Execute SQL query and return results"""
     def __init__(self, cm, filename=None, params=None, sql=None):
         self.cm = cm
         self.filename = filename
         self.params = params
         self.sql = sql
+        self.row_proxies = None
 
     def construct_query(self):
         "Read and parameterize (if necessary) a .sql file for execution."
@@ -68,7 +70,8 @@ class QueryGenerator(object):
 
         try:
             result_proxy = self.cm.conn.execute(self.sql)
-            result_data = result_proxy.fetchall()
+            self.row_proxies = result_proxy.fetchall()
+            result_data = [row.values() for row in self.row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
@@ -110,6 +113,7 @@ class QueryReader(object):
         self.sql = None
         self.query_path = config['Default']['query_path']
         self.raw_pattern = '(#{[a-z]*})'
+        self.to_replace = None
         if filename:
             self.read()
             self.find_values_to_replace()
@@ -126,19 +130,19 @@ class QueryReader(object):
             return "< QueryReader object >"
 
     def read(self):
-        "Reads and stores query contents"
+        """Reads and stores query contents"""
         file_path = os.path.join(self.query_path, self.filename + '.sql')
         with open(file_path, 'r') as f:
             self.raw_sql = f.read()
             self.sql = self.raw_sql
 
     def find_values_to_replace(self):
-        "Use pattern to identify all parameters in raw sql which need to be replaced."
+        """Use pattern to identify all parameters in raw sql which need to be replaced."""
         regexp = re.compile(self.raw_pattern)
         self.to_replace = regexp.findall(self.raw_sql)
 
     def replace_params(self):
-        "For every param, find and replace placeholder with appropriate value."
+        """For every param, find and replace placeholder with appropriate value."""
         raw_sql = self.raw_sql
         for placeholder in self.to_replace:
             newreg = re.compile(placeholder)
@@ -148,13 +152,13 @@ class QueryReader(object):
         self.sql = raw_sql
 
     def get_replacement_value(self, to_be_replaced):
-        "Given placeholder to be replaced, get name of parameter from within the pattern and lookup parameter value."
+        """Given placeholder to be replaced, get name of parameter from w/in the pattern and lookup parameter value."""
         name_reg = re.compile('[a-z]+')
         param_name = name_reg.search(to_be_replaced).group()
         return self.params.get(param_name)
 
     def validate(self):
-        "Check whether any placeholders have not been provided a replacement value."
+        """Check whether any placeholders have not been provided a replacement value."""
         regexp = re.compile(self.raw_pattern)
         missing = regexp.findall(self.sql)
         if missing:
