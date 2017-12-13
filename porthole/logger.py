@@ -29,7 +29,6 @@ class PortholeLogger(object):
         logger.addHandler(stream_handler)
         if log_to_file:
             logfile = logfile or default_logfile
-
             file_handler = logging.FileHandler(logfile)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
