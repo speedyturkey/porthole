@@ -19,17 +19,20 @@ COMMASPACE = ', '
 
 
 class Mailer:
-    def __init__(self, **kwargs):
+    def __init__(self, recipients=[], cc_recipients=[], **kwargs):
+        self.recipients = recipients
+        self.cc_recipients = cc_recipients
         self.properties = kwargs
         self.debug_mode = config.getboolean('Debug', 'debug_mode')
         debug_recipients = config['Debug']['debug_recipients']
         self.debug_recipients = [recip.strip() for recip in debug_recipients.split(';')]
-        self.send_from = config['Email']['username']
         self.username = config['Email']['username']
+        self.send_from = config['Email'].get('send_from', self.username)
         self.password = config['Email']['password']
         self.host = config['Email'].get('host', 'smtp.office365.com')
         self.signature = config['Email']['signature']
         self.admin_email = config['Admin']['admin_email']
+        self.attachments = None
 
     def send_email(self):
         if config['Email']['disabled'] == 'True':
@@ -45,7 +48,6 @@ class Mailer:
         else:
             outer['To'] = COMMASPACE.join(self.recipients)
             outer['CC'] = COMMASPACE.join(self.cc_recipients)
-
 
         msg = MIMEBase('application', "octet-stream")
 
@@ -87,7 +89,7 @@ Active report would have been sent to:
                 s.ehlo()
                 s.starttls()
                 s.login(self.username, self.password)
-                s.sendmail(self.username,
+                s.sendmail(self.send_from,
                            all_recipients,
                            composed)
                 s.close()
