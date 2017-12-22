@@ -33,6 +33,7 @@ class Mailer:
         self.signature = config['Email']['signature']
         self.admin_email = config['Admin']['admin_email']
         self.attachments = None
+        self.all_sent_to_recipients = None
 
     def send_email(self):
         if config['Email']['disabled'] == 'True':
@@ -92,6 +93,7 @@ Active report would have been sent to:
                 s.sendmail(self.send_from,
                            all_recipients,
                            composed)
+                self.all_sent_to_recipients = all_recipients
                 s.close()
                 logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
         except smtplib.SMTPConnectError as err:
