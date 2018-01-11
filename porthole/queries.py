@@ -11,10 +11,11 @@ logger = PortholeLogger(name=__name__)
 class QueryResult(object):
     """Represent result data from an executed query. Includes capability to write results as json."""
 
-    def __init__(self, result_count=None, field_names=None, result_data=None):
+    def __init__(self, result_count=None, field_names=None, result_data=None, row_proxies=None):
         self.result_count = result_count
         self.field_names = field_names
         self.result_data = result_data
+        self.row_proxies = row_proxies
         self.field_index = {field: idx for idx, field in enumerate(field_names)}
 
     def json_converter(self, obj):
@@ -53,7 +54,6 @@ class QueryGenerator(object):
         self.filename = filename
         self.params = params
         self.sql = sql
-        self.row_proxies = None
 
     def construct_query(self):
         "Read and parameterize (if necessary) a .sql file for execution."
@@ -70,8 +70,8 @@ class QueryGenerator(object):
 
         try:
             result_proxy = self.cm.conn.execute(self.sql)
-            self.row_proxies = result_proxy.fetchall()
-            result_data = [row.values() for row in self.row_proxies]
+            row_proxies = result_proxy.fetchall()
+            result_data = [row.values() for row in row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
@@ -79,7 +79,8 @@ class QueryGenerator(object):
 
         query_results = QueryResult(result_count=len(result_data),
                                     field_names=result_proxy.keys(),
-                                    result_data=result_data)
+                                    result_data=result_data,
+                                    row_proxies=row_proxies)
         return query_results
 
 

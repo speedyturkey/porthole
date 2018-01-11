@@ -15,6 +15,7 @@ from .logger import PortholeLogger
 
 logger = PortholeLogger(name=__name__)
 
+
 class Loggable(object):
     """
     Inherit from this class to implement basic error logging. If derived class
@@ -50,6 +51,7 @@ class Loggable(object):
         if msg:
             log_record = msg + ': ' + log_record
         self.error_log.append(log_record)
+
 
 class ReportWriter(Loggable):
     """
@@ -243,7 +245,7 @@ class RecipientsChecker(Loggable):
         try:
             q = QueryGenerator(cm=self.cm, sql=statement)
             results = q.execute()
-            for recipient in results.result_data:
+            for recipient in results.row_proxies:
                 if recipient.recipient_type == 'to':
                     self.to_recipients.append(recipient.email_address)
                 else:
