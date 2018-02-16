@@ -8,7 +8,7 @@ try:
     from .mailer import Mailer
     from .related_record import RelatedRecord, ChildRecord
     from .reports import BasicReport, GenericReport
-    from .queries import QueryGenerator, QueryReader, QueryResult
+    from .queries import QueryExecutor, QueryGenerator, QueryReader, QueryResult
     from .workflows import SimpleWorkflow
     from .xlsx import WorkbookBuilder
 except KeyError:
