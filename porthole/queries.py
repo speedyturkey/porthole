@@ -1,4 +1,4 @@
-import os, re, sys, json
+import os, re, json
 from decimal import Decimal
 from datetime import date
 from .app import config
@@ -113,7 +113,7 @@ class QueryReader(object):
         self.raw_sql = None
         self.sql = None
         self.query_path = config['Default']['query_path']
-        self.raw_pattern = '(#{[a-z]*})'
+        self.raw_pattern = '(#{[a-zA-Z_]*})'
         self.to_replace = None
         if filename:
             self.read()
@@ -164,6 +164,45 @@ class QueryReader(object):
         missing = regexp.findall(self.sql)
         if missing:
             raise NameError("Value not provided for placeholder {}".format(missing))
+
+
+class QueryExecutor(object):
+    """
+    QueryExecutor acts as a context manager for the execution of a given query against the selected database.
+    Open database connection, execute query, and close the connection.
+    Usage:
+    with QueryExecutor(db=MyDB, sql='select count(*) from my_table') as qe:
+        result = qe.execute_query()
+    """
+    def __init__(self, db, filename=None, params=None, sql=None):
+        self.db = db
+        self.cm = None
+        self.filename = filename
+        self.params = params
+        self.sql = sql
+
+    def create_database_connection(self):
+        self.cm = ConnectionManager(db=self.db)
+        self.cm.connect()
+
+    def close_database_connection(self):
+        self.cm.close()
+
+    def execute_query(self):
+        query = QueryGenerator(
+            cm=self.cm,
+            filename=self.filename,
+            params=self.params,
+            sql=self.sql
+        )
+        return query.execute()
+
+    def __enter__(self):
+        self.create_database_connection()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close_database_connection()
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import os, unittest, json
 from datetime import date
-from porthole import QueryGenerator, QueryReader, QueryResult
+from porthole import QueryGenerator, QueryReader, QueryResult, QueryExecutor
+
 
 class TestQueries(unittest.TestCase):
 
@@ -47,6 +48,18 @@ class TestQueries(unittest.TestCase):
         with self.assertRaises(NameError):
             s.validate()
 
+    def test_QueryExecutor(self):
+        executor = QueryExecutor(db='Test', sql='select * from flarp;')
+        executor.create_database_connection()
+        self.assertFalse(executor.cm.conn.closed)
+        result1 = executor.execute_query()
+        self.assertIsInstance(result1, QueryResult)
+        executor.close_database_connection()
+        self.assertTrue(executor.cm.conn.closed)
+        with QueryExecutor(db='Test', sql='select * from flarp;') as qe:
+            self.assertFalse(qe.cm.conn.closed)
+            result2 = qe.execute_query()
+            self.assertIsInstance(result2, QueryResult)
 
 
 headers = ['Name', 'DOB']
