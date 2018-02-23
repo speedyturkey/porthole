@@ -18,7 +18,8 @@ class QueryResult(object):
         self.row_proxies = row_proxies
         self.field_index = {field: idx for idx, field in enumerate(field_names)}
 
-    def json_converter(self, obj):
+    @staticmethod
+    def json_converter(obj):
         """Required to convert datatypes not otherwise json serializable."""
         if isinstance(obj, Decimal):
             return float(obj)
@@ -46,6 +47,27 @@ class QueryResult(object):
         for row in self.result_data:
             row[idx] = func(row[idx])
 
+
+class RowDict(dict):
+    def __init__(self, data=None, fields=None, values=None):
+        if data is None:
+            data = dict(zip(fields, values))
+        if data is not None:
+            self.update(data)
+
+    def values_list(self):
+        return list(self.values())
+
+    def __iter__(self):
+        self.idx = 0
+        return self
+
+    def __next__(self):
+        self.idx += 1
+        if len(self) < self.idx:
+            raise StopIteration
+        else:
+            return self.values_list()[self.idx - 1]
 
 class QueryGenerator(object):
     """Execute SQL query and return results"""
