@@ -41,5 +41,5 @@ class TestWorkbookBuilder(unittest.TestCase):
         self.assertEqual(widths[2], max(date_format_length, WorkbookBuilder.DEFAULT_COL_WIDTH))
         WorkbookBuilder.DEFAULT_COL_WIDTH = 0
         widths = self.test_builder.calculate_column_widths(field_names, data, autofit_columns=True)
-        self.assertEqual(widths[2], date_format_length)
+        self.assertEqual(widths[2], date_format_length * 1.15)
 

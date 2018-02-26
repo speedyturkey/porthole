@@ -1,4 +1,5 @@
 import os, re, json
+from collections import OrderedDict
 from decimal import Decimal
 from datetime import date
 from .app import config
@@ -48,26 +49,57 @@ class QueryResult(object):
             row[idx] = func(row[idx])
 
 
-class RowDict(dict):
+class RowDict(OrderedDict):
+    """
+    RowDict is used to represent a record in a query result. Because RowDict inherits from
+    OrderedDict, values are accessible using keys (field/header names). RowDict has special
+    iteration behavior such that iterating over a RowDict instance will return values rather
+    than keys.
+    RowDict inherits from OrderedDict to preserve compatibility with Python < 3.6.
+    """
     def __init__(self, data=None, fields=None, values=None):
-        if data is None:
-            data = dict(zip(fields, values))
-        if data is not None:
-            self.update(data)
+        fields_and_values_provided = fields is not None and values is not None
+        if fields_and_values_provided is True and data is None:
+            data = OrderedDict(zip(fields, values))
+        else:
+            data = data or OrderedDict()
+        super().__init__(data)
 
-    def values_list(self):
-        return list(self.values())
+    def __iterkeys(self):
+        """For reference, see cpython/Lib/collections/__init__.py"""
+        # Traverse the linked list in order.
+        root = self._OrderedDict__root
+        curr = root.next
+        while curr is not root:
+            yield curr.key
+            curr = curr.next
+
+    def __itervalues(self):
+        """For reference, see cpython/Lib/collections/__init__.py"""
+        # Traverse the linked list in order.
+        root = self._OrderedDict__root
+        curr = root.next
+        while curr is not root:
+            yield self.__getitem__(curr.key)
+            curr = curr.next
+
+    def keys(self):
+        return list(iter(self.__iterkeys()))
+
+    def values(self):
+        return list(iter(self.__itervalues()))
+
+    def items(self):
+        return zip(self.keys(), self.values())
 
     def __iter__(self):
-        self.idx = 0
-        return self
+        return self.__itervalues()
 
-    def __next__(self):
-        self.idx += 1
-        if len(self) < self.idx:
-            raise StopIteration
-        else:
-            return self.values_list()[self.idx - 1]
+    def __repr__(self):
+        if not self:
+            return '%s()' % (self.__class__.__name__,)
+        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+
 
 class QueryGenerator(object):
     """Execute SQL query and return results"""

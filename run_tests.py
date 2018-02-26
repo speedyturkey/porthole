@@ -7,7 +7,7 @@ from tests.test_ConnectionManager import TestConnectionManager
 from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_Reports import TestBasicReport, TestGenericReport
-from tests.test_Queries import TestQueries
+from tests.test_Queries import TestQueries, TestRowDict
 from tests.test_components import TestReportWriter, TestReportActiveChecker
 from tests.test_filters import TestResultFilter
 # Query Handlers
@@ -53,6 +53,7 @@ def main():
                             TestBasicReport,
                             TestGenericReport,
                             TestQueries,
+                            TestRowDict,
                             TestReportWriter,
                             TestReportActiveChecker,
                             TestResultFilter,
