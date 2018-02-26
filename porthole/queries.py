@@ -124,15 +124,16 @@ class QueryGenerator(object):
 
         try:
             result_proxy = self.cm.conn.execute(self.sql)
+            field_names = result_proxy.keys()
             row_proxies = result_proxy.fetchall()
-            result_data = [row.values() for row in row_proxies]
+            result_data = [RowDict(fields=field_names, values=row.values()) for row in row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
             raise RuntimeError("Unable to execute query.")
 
         query_results = QueryResult(result_count=len(result_data),
-                                    field_names=result_proxy.keys(),
+                                    field_names=field_names,
                                     result_data=result_data,
                                     row_proxies=row_proxies)
         return query_results
