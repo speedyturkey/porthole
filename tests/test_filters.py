@@ -2,8 +2,7 @@ import sys
 import unittest
 from random import randint, choice
 from porthole import QueryResult, ResultFilter
-
-
+from porthole.queries import RowDict
 
 
 class TestResultFilter(unittest.TestCase):
@@ -11,7 +10,11 @@ class TestResultFilter(unittest.TestCase):
     def setUp(self):
         self.fields = ['Name', 'Number']
         self.names = ['Foo', 'Bar', 'Bodoni']
-        self.data = [[choice(self.names), randint(0,100)] for _ in range(0,100)]
+        self.data = [
+            RowDict(
+                fields=self.fields,
+                values=[choice(self.names), randint(0, 100)]
+            ) for _ in range(0, 100)]
         self.result = QueryResult(field_names=self.fields, result_data=self.data)
 
     def test_filter(self):
