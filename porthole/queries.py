@@ -30,11 +30,7 @@ class QueryResult(object):
             raise TypeError("Cannot convert provided type {}".format(type(obj)))
 
     def as_dict(self):
-        """Returns contents as list of dictionaries with headers as keys."""
-        if self.field_names and self.result_data:
-            return [dict(zip(self.field_names, row)) for row in self.result_data]
-        else:
-            raise ValueError("Both field_names and result_data attributes are required.")
+        raise DeprecationWarning("QueryResult.as_dict method is no longer available and will be removed.")
 
     def write_to_json(self, filename):
         contents = self.as_dict()
@@ -42,11 +38,9 @@ class QueryResult(object):
             json.dump(contents, f, default=self.json_converter)
 
     def map_function_to_field(self, field, func):
-        idx = self.field_index.get(field)
-        if idx is None:
-            raise IndexError("Field name {} not found.".format(field))
+        assert field in self.field_names
         for row in self.result_data:
-            row[idx] = func(row[idx])
+            row['field'] = func(row['field'])
 
 
 class RowDict(OrderedDict):
