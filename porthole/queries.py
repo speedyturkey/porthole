@@ -42,6 +42,10 @@ class QueryResult(object):
         for row in self.result_data:
             row['field'] = func(row['field'])
 
+    def apply(self, func):
+        for row in self.result_data:
+            func(row)
+
 
 class RowDict(OrderedDict):
     """
