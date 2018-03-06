@@ -15,7 +15,7 @@ class QueryResult(object):
     def __init__(self, result_count=None, field_names=None, result_data=None, row_proxies=None):
         self.result_count = result_count
         self.field_names = field_names
-        self.result_data = result_data
+        self.result_data = [RowDict(fields=field_names, values=row) for row in result_data]
         self.row_proxies = row_proxies
         self.field_index = {field: idx for idx, field in enumerate(field_names)}
 
@@ -33,14 +33,13 @@ class QueryResult(object):
         raise DeprecationWarning("QueryResult.as_dict method is no longer available and will be removed.")
 
     def write_to_json(self, filename):
-        contents = self.as_dict()
         with open(filename, 'w') as f:
-            json.dump(contents, f, default=self.json_converter)
+            json.dump(self.result_data, f, default=self.json_converter)
 
     def map_function_to_field(self, field, func):
         assert field in self.field_names
         for row in self.result_data:
-            row['field'] = func(row['field'])
+            row[field] = func(row[field])
 
     def apply(self, func):
         for row in self.result_data:
@@ -125,6 +124,7 @@ class QueryGenerator(object):
             field_names = result_proxy.keys()
             row_proxies = result_proxy.fetchall()
             result_data = [RowDict(fields=field_names, values=row.values()) for row in row_proxies]
+            # result_data = [row.values() for row in row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
