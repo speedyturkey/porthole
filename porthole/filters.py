@@ -1,5 +1,6 @@
 from .queries import QueryResult
 
+
 class ResultFilter(object):
     """
     Used for splitting a QueryResult on a specified attribute into sub-results.
@@ -18,24 +19,25 @@ class ResultFilter(object):
         self.headers = result_to_filter.field_names
         self.data = result_to_filter.result_data
         self.filter_by = filter_by
+        self.keys = []
         self.filtered_data = {}
         self.filtered_results = {}
-        try:
-            self.filter_idx = self.headers.index(filter_by)
-        except:
+        self.filter_by = filter_by
+        if filter_by not in self.headers:
             raise ValueError("Provided headers must contain filter_by value.")
 
     def filter(self):
-        self.keys = []
         for row in self.data:
-            key = row[self.filter_idx]
+            key = row[self.filter_by]
             if key not in self.keys:
                 self.keys.append(key)
                 self.filtered_data[key] = []
             self.filtered_data[key].append(row)
         for key in self.keys:
-            self.filtered_results[key] = QueryResult(field_names=self.headers,
-                                            result_data=self.filtered_data[key])
+            self.filtered_results[key] = QueryResult(
+                field_names=self.headers,
+                result_data=self.filtered_data[key]
+                )
 
     def __iter__(self):
         self.pos = 0

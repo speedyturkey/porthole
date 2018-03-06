@@ -1,4 +1,5 @@
 import os, re, json
+from collections import OrderedDict
 from decimal import Decimal
 from datetime import date
 from .app import config
@@ -14,11 +15,12 @@ class QueryResult(object):
     def __init__(self, result_count=None, field_names=None, result_data=None, row_proxies=None):
         self.result_count = result_count
         self.field_names = field_names
-        self.result_data = result_data
+        self.result_data = [RowDict(fields=field_names, values=row) for row in result_data]
         self.row_proxies = row_proxies
         self.field_index = {field: idx for idx, field in enumerate(field_names)}
 
-    def json_converter(self, obj):
+    @staticmethod
+    def json_converter(obj):
         """Required to convert datatypes not otherwise json serializable."""
         if isinstance(obj, Decimal):
             return float(obj)
@@ -28,23 +30,72 @@ class QueryResult(object):
             raise TypeError("Cannot convert provided type {}".format(type(obj)))
 
     def as_dict(self):
-        """Returns contents as list of dictionaries with headers as keys."""
-        if self.field_names and self.result_data:
-            return [dict(zip(self.field_names, row)) for row in self.result_data]
-        else:
-            raise ValueError("Both field_names and result_data attributes are required.")
+        raise DeprecationWarning("QueryResult.as_dict method is no longer available and will be removed.")
 
     def write_to_json(self, filename):
-        contents = self.as_dict()
         with open(filename, 'w') as f:
-            json.dump(contents, f, default=self.json_converter)
+            json.dump(self.result_data, f, default=self.json_converter)
 
     def map_function_to_field(self, field, func):
-        idx = self.field_index.get(field)
-        if idx is None:
-            raise IndexError("Field name {} not found.".format(field))
+        assert field in self.field_names
         for row in self.result_data:
-            row[idx] = func(row[idx])
+            row[field] = func(row[field])
+
+    def apply(self, func):
+        for row in self.result_data:
+            func(row)
+
+
+class RowDict(OrderedDict):
+    """
+    RowDict is used to represent a record in a query result. Because RowDict inherits from
+    OrderedDict, values are accessible using keys (field/header names). RowDict has special
+    iteration behavior such that iterating over a RowDict instance will return values rather
+    than keys.
+    RowDict inherits from OrderedDict to preserve compatibility with Python < 3.6.
+    """
+    def __init__(self, data=None, fields=None, values=None):
+        fields_and_values_provided = fields is not None and values is not None
+        if fields_and_values_provided is True and data is None:
+            data = OrderedDict(zip(fields, values))
+        else:
+            data = data or OrderedDict()
+        super().__init__(data)
+
+    def __iterkeys(self):
+        """For reference, see cpython/Lib/collections/__init__.py"""
+        # Traverse the linked list in order.
+        root = self._OrderedDict__root
+        curr = root.next
+        while curr is not root:
+            yield curr.key
+            curr = curr.next
+
+    def __itervalues(self):
+        """For reference, see cpython/Lib/collections/__init__.py"""
+        # Traverse the linked list in order.
+        root = self._OrderedDict__root
+        curr = root.next
+        while curr is not root:
+            yield self.__getitem__(curr.key)
+            curr = curr.next
+
+    def keys(self):
+        return list(iter(self.__iterkeys()))
+
+    def values(self):
+        return list(iter(self.__itervalues()))
+
+    def items(self):
+        return zip(self.keys(), self.values())
+
+    def __iter__(self):
+        return self.__itervalues()
+
+    def __repr__(self):
+        if not self:
+            return '%s()' % (self.__class__.__name__,)
+        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
 
 
 class QueryGenerator(object):
@@ -70,6 +121,7 @@ class QueryGenerator(object):
 
         try:
             result_proxy = self.cm.conn.execute(self.sql)
+            field_names = result_proxy.keys()
             row_proxies = result_proxy.fetchall()
             result_data = [row.values() for row in row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
@@ -78,7 +130,7 @@ class QueryGenerator(object):
             raise RuntimeError("Unable to execute query.")
 
         query_results = QueryResult(result_count=len(result_data),
-                                    field_names=result_proxy.keys(),
+                                    field_names=field_names,
                                     result_data=result_data,
                                     row_proxies=row_proxies)
         return query_results
@@ -88,7 +140,7 @@ class QueryReader(object):
     """
     QueryReader is used to read, and optionally to parameterize, .sql files.
 
-    Saved queries requiring paremeters at runtime should use placeholders in the format
+    Saved queries requiring parameters at runtime should use placeholders in the format
     matching the raw_pattern attribute, which is by default:
         #{parameter_name} e.g. #{first_name}, #{last_name}, etc.
 
@@ -154,7 +206,7 @@ class QueryReader(object):
 
     def get_replacement_value(self, to_be_replaced):
         """Given placeholder to be replaced, get name of parameter from w/in the pattern and lookup parameter value."""
-        name_reg = re.compile('[a-z]+')
+        name_reg = re.compile('[a-zA-z_]+')
         param_name = name_reg.search(to_be_replaced).group()
         return self.params.get(param_name)
 

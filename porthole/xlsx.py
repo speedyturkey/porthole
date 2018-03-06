@@ -61,8 +61,8 @@ class WorkbookBuilder(object):
 
         # Write the data.
         for row in sheet_data:
-            for x in range(0, len(row)):
-                worksheet.write(e_row, e_col + x, row[x])
+            for x, value in enumerate(row):
+                worksheet.write(e_row, e_col + x, value)
             e_row += 1
 
         col_widths = self.calculate_column_widths(field_names, sheet_data, autofit_columns, column_width)
@@ -83,16 +83,17 @@ class WorkbookBuilder(object):
         if autofit_columns is True:
             # We want the longest value in a given column, including the field name.
             headers_and_data = [field_names] + sheet_data
-            for i, col in enumerate(field_names):
-                for row in headers_and_data:
-                    if isinstance(row[i], datetime.datetime):
+            for row in headers_and_data:
+                for idx, value in enumerate(row):
+                    if isinstance(value, datetime.datetime):
                         # datetime string representation is usually much longer (26 chars)
                         # than default date format (8 chars)
                         formatted_length = len(str(self.workbook.default_date_format.num_format))
-                        col_widths[i] = max(formatted_length, WorkbookBuilder.DEFAULT_COL_WIDTH)
-                        break
-                    if len(str(row[i])) > col_widths[i]:
-                        col_widths[i] = len(str(row[i])) * 1.15
+                        compare_value = max(formatted_length, WorkbookBuilder.DEFAULT_COL_WIDTH)
+                    else:
+                        compare_value = len(str(value))
+                    if compare_value > col_widths[idx]:
+                        col_widths[idx] = compare_value * 1.15
 
         for i, width in enumerate(col_widths):
             if width > WorkbookBuilder.MAX_COLUMN_WIDTH:

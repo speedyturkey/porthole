@@ -215,7 +215,7 @@ class ReportActiveChecker(Loggable):
         try:
             q = QueryGenerator(cm=self.cm, sql=statement)
             results = q.execute()
-            if results.result_data[0][0] == 1:
+            if results.result_data[0]['active'] == 1:
                 self.active = True
             else:
                 self.active = False
