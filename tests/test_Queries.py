@@ -20,10 +20,17 @@ class TestQueries(unittest.TestCase):
 
     def test_queryresult_map(self):
         result = QueryResult(field_names=headers, result_data=data)
-        with self.assertRaises(IndexError):
+        with self.assertRaises(AssertionError):
             result.map_function_to_field('NOTEXIST', lambda txt: txt.upper())
         result.map_function_to_field('Name', lambda txt: txt.upper())
-        self.assertEqual('BILLY', result.result_data[0][0])
+        self.assertEqual('BILLY', result.result_data[0]['Name'])
+
+        def lower_name(row):
+            row['Name'] = row['Name'].lower()
+
+        result.apply(lower_name)
+        self.assertEqual('billy', result.result_data[0]['Name'])
+        self.assertEqual('erika', result.result_data[1]['Name'])
 
     def test_queryreader_no_params(self):
         """A QueryReader can be instantiated when no parameters are required."""
@@ -33,7 +40,7 @@ class TestQueries(unittest.TestCase):
 
     def test_queryreader_params(self):
         """A QueryReader can be instantiated when all required parameters are provided."""
-        s = QueryReader(filename='tests/test_query_with_params', params = {'foo': 'value1', 'bar': 'value2'})
+        s = QueryReader(filename='tests/test_query_with_params', params = {'foo': 'value1', 'b_ar': 'value2', 'Baz': 'value3'})
         self.assertNotEqual(s.raw_sql, s.sql)
         self.assertIsNotNone(s.raw_sql)
         self.assertIsNotNone(s.sql)
