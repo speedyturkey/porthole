@@ -123,8 +123,7 @@ class QueryGenerator(object):
             result_proxy = self.cm.conn.execute(self.sql)
             field_names = result_proxy.keys()
             row_proxies = result_proxy.fetchall()
-            result_data = [RowDict(fields=field_names, values=row.values()) for row in row_proxies]
-            # result_data = [row.values() for row in row_proxies]
+            result_data = [row.values() for row in row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
@@ -141,7 +140,7 @@ class QueryReader(object):
     """
     QueryReader is used to read, and optionally to parameterize, .sql files.
 
-    Saved queries requiring paremeters at runtime should use placeholders in the format
+    Saved queries requiring parameters at runtime should use placeholders in the format
     matching the raw_pattern attribute, which is by default:
         #{parameter_name} e.g. #{first_name}, #{last_name}, etc.
 
