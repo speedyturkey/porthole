@@ -207,7 +207,7 @@ class QueryReader(object):
 
     def get_replacement_value(self, to_be_replaced):
         """Given placeholder to be replaced, get name of parameter from w/in the pattern and lookup parameter value."""
-        name_reg = re.compile('[a-z]+')
+        name_reg = re.compile('[a-zA-z_]+')
         param_name = name_reg.search(to_be_replaced).group()
         return self.params.get(param_name)
 

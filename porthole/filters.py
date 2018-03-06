@@ -1,5 +1,6 @@
 from .queries import QueryResult
 
+
 class ResultFilter(object):
     """
     Used for splitting a QueryResult on a specified attribute into sub-results.
