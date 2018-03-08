@@ -52,6 +52,13 @@ class ConnectionManager():
         else:
             return None
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.close()
+
 
 class ConnectionPool(object):
 
