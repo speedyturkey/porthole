@@ -88,8 +88,8 @@ class TestRowDict(unittest.TestCase):
 
     def test_iteration(self):
         test_row = RowDict(fields=headers, values=row1)
-        self.assertEqual(headers, test_row.keys())
-        self.assertEqual(row1, test_row.values())
+        self.assertEqual(headers, list(test_row.keys()))
+        self.assertEqual(row1, list(test_row.values()))
         for value in test_row:
             self.assertIn(value, row1)
         items = test_row.items()
@@ -102,7 +102,7 @@ class TestRowDict(unittest.TestCase):
         test_row['Foo'] = 'Bar'
         self.assertIn('Foo', test_row)
         self.assertIn('Bar', test_row.values())
-        self.assertEqual(headers + ['Foo'], test_row.keys())
+        self.assertEqual(headers + ['Foo'], list(test_row.keys()))
 
 
 headers = ['Name', 'DOB']

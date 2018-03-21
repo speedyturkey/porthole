@@ -62,35 +62,8 @@ class RowDict(OrderedDict):
             data = data or OrderedDict()
         super().__init__(data)
 
-    def __iterkeys(self):
-        """For reference, see cpython/Lib/collections/__init__.py"""
-        # Traverse the linked list in order.
-        root = self._OrderedDict__root
-        curr = root.next
-        while curr is not root:
-            yield curr.key
-            curr = curr.next
-
-    def __itervalues(self):
-        """For reference, see cpython/Lib/collections/__init__.py"""
-        # Traverse the linked list in order.
-        root = self._OrderedDict__root
-        curr = root.next
-        while curr is not root:
-            yield self.__getitem__(curr.key)
-            curr = curr.next
-
-    def keys(self):
-        return list(iter(self.__iterkeys()))
-
-    def values(self):
-        return list(iter(self.__itervalues()))
-
-    def items(self):
-        return zip(self.keys(), self.values())
-
     def __iter__(self):
-        return self.__itervalues()
+        return iter(self.values())
 
     def __repr__(self):
         if not self:

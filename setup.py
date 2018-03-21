@@ -7,6 +7,7 @@ setup(name='porthole',
       author_email='speedyturkey@gmail.com',
       url='https://github.com/speedyturkey/porthole',
       packages=['porthole'],
+      python_requires='>3.5',
       install_requires=[
                         'pymysql',
                         'psycopg2',
