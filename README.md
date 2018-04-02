@@ -19,9 +19,9 @@ These instructions will allow you to install and configure your environment. You
 
 #### Prerequisites
 
-You must have first installed Python 3. It is recommended but not required to use an environment/package manager such as Anaconda. For more information, see the "Install Conda" section below. At the very least, if you are using a Mac, please do NOT use the "system" Python.
+You must have first installed Python 3.5 or higher. It is recommended but not required to use an environment/package manager such as Anaconda. For more information, see the "Install Conda" section below. At the very least, if you are using a Mac, please do NOT use the "system" Python.
 
-You must also have access to a compatible database (at time of writing, this includes MySQL and SQLite) and have CRUD privileges.
+You must also have access to a compatible database (at time of writing, this includes MySQL, PostgreSQL and SQLite) and have CRUD privileges. See "Step 3 - Create database tables" below for more information.
 
 ### Step 1 - Install Porthole
 
@@ -56,11 +56,12 @@ Required values:
 Since any database connection requires several parameters, database configs are defined as their own sections. The parameters required in a given section depend on which RDBMS is being defined. The full list of parameters is as follows:
 
 * Section header - e.g. [Production] - This is a descriptive label which will identify a given connection.
-* rdbms - The type of RDBMS. Currently supported options include mysql and sqlite.
+* rdbms - The type of RDBMS. Currently supported options include mysql, postgresql, and sqlite.
 * host - The connection string or endpoint. For sqlite, this is the database file name.
 * port - Usually defaults to 3306 for mysql. Not used for sqlite but set to 0 by default.
 * user - The account name for the database user.
 * password - The user's password.
+* database - This is for postgresql only. The name of the database to connect to (e.g. `public`).
 * schema - The default schema or database name. You should have permissions to create and update tables in this schema.
 
 ##### Email
@@ -70,10 +71,11 @@ In order to send emails, you must have an email account from which to send messa
 * username - The email address you'd like to use.
 * password - The password for that account.
 * host - The smtp server associated with your account (e.g. smtp.gmail.com).
+* send_from - Optional. If provided, this will override username in your message's metadata, changing the address the message is sent from. This is intended for use with services such as Amazon's Simple Email Service. 
 
 ### Step 3 - Create database tables
 
-Porthole uses several database tables for report definition and recipient management. It is therefore necessary to create these tables before using the package.
+Porthole uses several database tables for report definition and recipient management. To utilize Porthole's full functionality, it is necessary to create these tables before using the package. Note that you can create these tables in a dedicated reporting schema or database if you cannot or do not wish to create tables in the same schema or database as the data you are reporting on. Additionally, you can skip this section and use the lighter-weight `BasicReport` class, which does not require these dedicated tables.
 
 Execute the following:
 

@@ -11,36 +11,49 @@ configdir = 'config'
 configfile = 'config.ini'
 configpath = os.path.join(configdir, configfile)
 
-Default =  OrderedDict([('base_file_path', NONE),
-                        ('query_path', NONE),
-                        ('database', NONE),
-                        ('notification_recipient', NONE)])
+Default = OrderedDict([(
+    'base_file_path', NONE),
+    ('query_path', NONE),
+    ('database', NONE),
+    ('notification_recipient', NONE)
+])
 
-ConnectionName = OrderedDict([('rdbms', NONE),
-                            ('host', NONE),
-                            ('port', 0),
-                            ('user', NONE),
-                            ('password', NONE),
-                            ('schema', NONE)])
+ConnectionName = OrderedDict([(
+    'rdbms', NONE),
+    ('host', NONE),
+    ('port', 0),
+    ('user', NONE),
+    ('password', NONE),
+    ('database', NONE),
+    ('schema', NONE)
+])
 
-Email = OrderedDict([('username', NONE),
-                        ('password', NONE),
-                        ('host', NONE),
-                        ('disabled', "FALSE"),
-                        ('signature', NONE)])
+Email = OrderedDict([(
+    'username', NONE),
+    ('password', NONE),
+    ('host', NONE),
+    ('disabled', "FALSE"),
+    ('send_from', NONE),
+    ('signature', NONE)
+])
 
-Logging = OrderedDict([('server', "FALSE"),
-                        ('log_to_file', "FALSE"),
-                        ('logfile', NONE),
-                        ('logging_db', NONE)])
+Logging = OrderedDict([
+    ('server', "FALSE"),
+    ('log_to_file', "FALSE"),
+    ('logfile', NONE),
+    ('logging_db', NONE)
+])
 
-Debug = OrderedDict([('debug_mode', "FALSE"),
-                        ('debug_recipients', NONE)])
+Debug = OrderedDict([
+    ('debug_mode', "FALSE"),
+    ('debug_recipients', NONE)
+])
 
 Admin = OrderedDict([('admin_email', NONE)])
 
+
 def new_config():
-    "Writes a blank config file. Use during new project setup or reference example.ini."
+    """Writes a blank config file. Use during new project setup or reference example.ini."""
     parser = ConfigParser()
 
     parser['Default'] = Default
@@ -59,8 +72,9 @@ def new_config():
             parser.write(f)
         print("Created blank template {}.".format(configpath))
 
+
 def setup_tables():
-    "Executes table creation statements for core tables in user-defined default database."
+    """Executes table creation statements for core tables in user-defined default database."""
     db = config['Default']['database']
     try:
         cm = ConnectionManager(db)
