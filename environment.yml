@@ -1,6 +1,6 @@
 name: porthole
 dependencies:
-  - python=3.4
+  - python=3.6
   - pymysql
   - psycopg2
   - xlsxwriter
