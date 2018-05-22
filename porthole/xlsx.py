@@ -30,7 +30,7 @@ class WorkbookBuilder(object):
         self.workbook.close()
 
     def add_worksheet(self, sheet_name, field_names, sheet_data, row_start=0, col_start=0, autofit_columns=False,
-                      column_width=None):
+                      column_width=None, freeze_first_row=False):
         """
         :param sheet_name: Worksheet name as string.
         :param field_names: List of column names to be written as headers.
@@ -68,6 +68,8 @@ class WorkbookBuilder(object):
         col_widths = self.calculate_column_widths(field_names, sheet_data, autofit_columns, column_width)
         for i, width in enumerate(col_widths):
             worksheet.set_column(i, i, width)
+        if freeze_first_row:
+            worksheet.freeze_panes(1,0)
 
     def calculate_column_widths(self, field_names, sheet_data, autofit_columns=False, column_width=None):
         """
