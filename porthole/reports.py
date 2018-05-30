@@ -58,7 +58,8 @@ class BasicReport(Loggable):
                                     sheet_name,
                                     db=None,
                                     query={},
-                                    sql=None):
+                                    sql=None,
+                                    **kwargs):
         """Delegates functionality to ReportWriter."""
         if db is None:
             db = self.default_db
@@ -66,7 +67,8 @@ class BasicReport(Loggable):
         self.report_writer.create_worksheet_from_query(cm=cm,
                                                         sheet_name=sheet_name,
                                                         query=query,
-                                                        sql=sql)
+                                                        sql=sql,
+                                                        **kwargs)
 
     def make_worksheet(self, sheet_name, query_results):
         """Delegates functionality to ReportWriter."""

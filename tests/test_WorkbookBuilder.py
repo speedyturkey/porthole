@@ -21,9 +21,11 @@ class TestWorkbookBuilder(unittest.TestCase):
 
     def test_add_worksheet(self):
         field_names = ['Field1', 'Field2']
-        data = ['Foo', 'Bar']
-        self.test_builder.add_worksheet("TestSheet", field_names, data)
-        self.assertIn("TestSheet", self.test_builder.workbook.sheetnames)
+        data = [['Foo', 'BarBarBarBarBar']]
+        self.test_builder.add_worksheet("TestSheet1", field_names, data, autofit_columns=False)
+        self.test_builder.add_worksheet("TestSheet2", field_names, data, autofit_columns=True)
+        self.assertIn("TestSheet1", self.test_builder.workbook.sheetnames)
+        self.assertIn("TestSheet2", self.test_builder.workbook.sheetnames)
 
     def test_close_workbook(self):
         self.assertFalse(self.test_builder.workbook.fileclosed)
@@ -42,4 +44,3 @@ class TestWorkbookBuilder(unittest.TestCase):
         WorkbookBuilder.DEFAULT_COL_WIDTH = 0
         widths = self.test_builder.calculate_column_widths(field_names, data, autofit_columns=True)
         self.assertEqual(widths[2], date_format_length * 1.15)
-

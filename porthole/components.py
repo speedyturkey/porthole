@@ -121,19 +121,20 @@ class ReportWriter(Loggable):
             logger.error(error)
             self.log_error(error)
 
-    def make_worksheet(self, sheet_name, query_results):
+    def make_worksheet(self, sheet_name, query_results, **kwargs):
         "Adds worksheet to workbook using provided query results."
         try:
             self.workbook_builder.add_worksheet(sheet_name=sheet_name,
                                                 field_names=query_results.field_names,
-                                                sheet_data=query_results.result_data
+                                                sheet_data=query_results.result_data,
+                                                **kwargs
                                             )
         except:
             error = "Unable to add worksheet {}".format(sheet_name)
             logger.error(error)
             self.log_error(error)
 
-    def create_worksheet_from_query(self, cm, sheet_name, query={}, sql=None):
+    def create_worksheet_from_query(self, cm, sheet_name, query={}, sql=None, **kwargs):
         """
         Args:
             cm              (ConnectionManager):
@@ -151,7 +152,7 @@ class ReportWriter(Loggable):
         Executes a query and uses results to add worksheet to ReportWriter.workbook_builder.
         """
         results = self.execute_query(cm=cm, query=query, sql=sql)
-        self.make_worksheet(sheet_name=sheet_name, query_results=results)
+        self.make_worksheet(sheet_name=sheet_name, query_results=results, **kwargs)
 
 
 class DatabaseLogger(Loggable):
