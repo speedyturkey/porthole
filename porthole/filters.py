@@ -32,10 +32,10 @@ class ResultFilter(object):
             if key not in self.keys:
                 self.keys.append(key)
                 self.filtered_data[key] = []
-            self.filtered_data[key].append(row[:])
+            self.filtered_data[key].append(list(row))
         for key in self.keys:
             self.filtered_results[key] = QueryResult(
-                field_names=self.headers[:],
+                field_names=list(self.headers),
                 result_data=self.filtered_data[key]
                 )
 
