@@ -70,10 +70,12 @@ class BasicReport(Loggable):
                                                         sql=sql,
                                                         **kwargs)
 
-    def make_worksheet(self, sheet_name, query_results):
+    def make_worksheet(self, sheet_name, query_results, **kwargs):
         """Delegates functionality to ReportWriter."""
         self.report_writer.make_worksheet(sheet_name=sheet_name,
-                                            query_results=query_results)
+                                            query_results=query_results,
+                                            **kwargs
+                                            )
 
     def build_email(self):
         """Instantiates Mailer object using provided parameters."""
