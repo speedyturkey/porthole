@@ -24,13 +24,8 @@ class ConnectionManager():
     def connect(self):
         if not self.db:
             raise ValueError("Cannot connect - db attribute not set.")
-        try:
-            self.engine = self.create_engine()
-            self.conn = self.engine.connect()
-        except ValueError:
-            raise
-        except:
-            raise RuntimeError("Unable to connect to database {}".format(self.db))
+        self.engine = self.create_engine()
+        self.conn = self.engine.connect()
 
     def create_engine(self):
         if self.rdbms == 'sqlite':
