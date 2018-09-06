@@ -67,8 +67,8 @@ class Mailer:
                                    'attachment',
                                    filename=os.path.basename(file))
                     outer.attach(msg)
-                except:
-                    logger.exception("Unable to add the attachment to the email")
+                except Exception as e:
+                    logger.exception(e)
                     raise
 
         composed = outer.as_string()
@@ -96,11 +96,8 @@ Active report would have been sent to:
                 self.all_sent_to_recipients = all_recipients
                 s.close()
                 logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
-        except smtplib.SMTPConnectError as err:
-            logger.error("Unable to connect to the SMTP server to send email: {}".format(err))
-            raise
-        except:
-            logger.exception("Unable to send email")
+        except Exception as e:
+            logger.exception(e)
             raise
 
 if __name__ == '__main__':

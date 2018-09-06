@@ -1,7 +1,9 @@
 import pymysql
 from sqlalchemy import create_engine
 from .app import config
+from .logger import PortholeLogger
 
+logger = PortholeLogger(name=__name__)
 
 class ConnectionManager():
     def __init__(self, db=None):
@@ -24,8 +26,12 @@ class ConnectionManager():
     def connect(self):
         if not self.db:
             raise ValueError("Cannot connect - db attribute not set.")
-        self.engine = self.create_engine()
-        self.conn = self.engine.connect()
+        try:
+            self.engine = self.create_engine()
+            self.conn = self.engine.connect()
+        except Exception as e:
+            logger.exception(e)
+            raise
 
     def create_engine(self):
         if self.rdbms == 'sqlite':
