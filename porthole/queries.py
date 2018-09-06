@@ -100,7 +100,7 @@ class QueryGenerator(object):
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
         except Exception as e:
             logger.exception(e)
-            raise RuntimeError("Unable to execute query.")
+            raise
 
         query_results = QueryResult(result_count=len(result_data),
                                     field_names=field_names,

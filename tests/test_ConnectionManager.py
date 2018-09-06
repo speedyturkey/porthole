@@ -17,7 +17,7 @@ class TestConnectionManager(unittest.TestCase):
         cm = ConnectionManager()
         cm.db = 'Fake_DB'
         cm.config.add_section('Fake_DB')
-        cm.config.set('Fake_DB', 'rdbms', 'postgres')
+        cm.config.set('Fake_DB', 'rdbms', 'fakedb')
         cm.unpack_params()
         with self.assertRaisesRegex(ValueError, "Unsupported RDBMS"):
             cm.connect()

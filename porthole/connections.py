@@ -1,7 +1,9 @@
 import pymysql
 from sqlalchemy import create_engine
 from .app import config
+from .logger import PortholeLogger
 
+logger = PortholeLogger(name=__name__)
 
 class ConnectionManager():
     def __init__(self, db=None):
@@ -27,17 +29,16 @@ class ConnectionManager():
         try:
             self.engine = self.create_engine()
             self.conn = self.engine.connect()
-        except ValueError:
+        except Exception as e:
+            logger.exception(e)
             raise
-        except:
-            raise RuntimeError("Unable to connect to database {}".format(self.db))
 
     def create_engine(self):
         if self.rdbms == 'sqlite':
             return create_engine('sqlite:///{db_host}'.format(**self.__dict__))
         elif self.rdbms == 'mysql':
             return create_engine('mysql+pymysql://{db_user}:{db_password}@{db_host}'.format(**self.__dict__))
-        elif self.rdbms == 'postgresql':
+        elif self.rdbms in ['postgresql', 'postgres']:
             return create_engine('postgresql://{db_user}:{db_password}@{db_host}/{database}'.format(**self.__dict__))
         else:
             raise ValueError("Unsupported RDBMS: {}".format(self.rdbms))

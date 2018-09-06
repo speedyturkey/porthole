@@ -15,6 +15,7 @@ class SimpleWorkflow():
         self.functions = functions
         self.completed = None
         self.failed_on = None
+        self.exception = None
 
     def run(self):
         while self.functions:
@@ -23,8 +24,9 @@ class SimpleWorkflow():
             try:
                 # execute function by unpacking dictionary
                 success = function['function'](**function['args'])
-            except:
+            except Exception as e:
                 success = False
+                self.exception = e
             if not success:
                 self.completed = False
                 self.failed_on = function
