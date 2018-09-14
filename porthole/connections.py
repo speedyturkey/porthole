@@ -22,6 +22,7 @@ class ConnectionManager():
         self.db_password = self.config[self.db].get('password')
         self.database = self.config[self.db].get('database')
         self.schema = self.config[self.db].get('schema')
+        self.driver = self.config[self.db].get('driver')
 
     def connect(self):
         if not self.db:
@@ -34,12 +35,15 @@ class ConnectionManager():
             raise
 
     def create_engine(self):
-        if self.rdbms == 'sqlite':
+        rdbms = self.rdbms.lower()
+        if rdbms == 'sqlite':
             return create_engine('sqlite:///{db_host}'.format(**self.__dict__))
-        elif self.rdbms == 'mysql':
+        elif rdbms == 'mysql':
             return create_engine('mysql+pymysql://{db_user}:{db_password}@{db_host}'.format(**self.__dict__))
-        elif self.rdbms in ['postgresql', 'postgres']:
+        elif rdbms in ['postgresql', 'postgres']:
             return create_engine('postgresql://{db_user}:{db_password}@{db_host}/{database}'.format(**self.__dict__))
+        elif rdbms in ['mssql', 'sqlserver']:
+            return create_engine('mssql+pyodbc://{db_user}:{db_password}@{db_host}:{db_port}/{database}?driver={driver}'.format(**self.__dict__))
         else:
             raise ValueError("Unsupported RDBMS: {}".format(self.rdbms))
 
