@@ -88,20 +88,22 @@ class QueryGenerator(object):
             raise Exception("Cannot construct query without providing the SQL filename.")
 
     def execute(self):
-
         if self.sql is None:
             self.construct_query()
-
         try:
             result_proxy = self.cm.conn.execute(self.sql)
-            field_names = result_proxy.keys()
-            row_proxies = result_proxy.fetchall()
-            result_data = [row.values() for row in row_proxies]
             logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
+            if result_proxy.cursor:
+                return self.fetch_results(result_proxy)
         except Exception as e:
             logger.exception(e)
             raise
 
+    @staticmethod
+    def fetch_results(result_proxy):
+        field_names = result_proxy.keys()
+        row_proxies = result_proxy.fetchall()
+        result_data = [row.values() for row in row_proxies]
         query_results = QueryResult(result_count=len(result_data),
                                     field_names=field_names,
                                     result_data=result_data,
@@ -199,12 +201,9 @@ class QueryExecutor(object):
     with QueryExecutor(db=MyDB, sql='select count(*) from my_table') as qe:
         result = qe.execute_query()
     """
-    def __init__(self, db, filename=None, params=None, sql=None):
+    def __init__(self, db):
         self.db = db
         self.cm = None
-        self.filename = filename
-        self.params = params
-        self.sql = sql
 
     def create_database_connection(self):
         self.cm = ConnectionManager(db=self.db)
@@ -213,14 +212,17 @@ class QueryExecutor(object):
     def close_database_connection(self):
         self.cm.close()
 
-    def execute_query(self):
+    def execute_query(self, filename=None, params=None, sql=None):
         query = QueryGenerator(
             cm=self.cm,
-            filename=self.filename,
-            params=self.params,
-            sql=self.sql
+            filename=filename,
+            params=params,
+            sql=sql
         )
         return query.execute()
+
+    def commit(self):
+        self.cm.commit()
 
     def __enter__(self):
         self.create_database_connection()
