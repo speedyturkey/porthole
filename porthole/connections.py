@@ -57,6 +57,9 @@ class ConnectionManager():
         else:
             return None
 
+    def commit(self):
+        self.conn.connection.commit()
+
     def __enter__(self):
         self.connect()
         return self
