@@ -8,6 +8,7 @@ from .logger import PortholeLogger
 
 logger = PortholeLogger(name=__name__)
 
+RE_SQL_STATEMENT = re.compile(''';(?=(?:[^"'`]*["'`][^"'`]*["'`])*[^"'`]*$)''')
 
 class QueryResult(object):
     """Represent result data from an executed query. Includes capability to write results as json."""
@@ -74,6 +75,8 @@ class RowDict(OrderedDict):
 class QueryGenerator(object):
     """Execute SQL query and return results"""
     def __init__(self, cm, filename=None, params=None, sql=None):
+        if filename is not None and sql is not None:
+            raise TypeError("Cannot give both 'filename' and 'sql' arguments")
         self.cm = cm
         self.filename = filename
         self.params = params
@@ -88,16 +91,38 @@ class QueryGenerator(object):
             raise Exception("Cannot construct query without providing the SQL filename.")
 
     def execute(self):
+        """
+        This method will execute a series of statements, if that is what has been provided.
+        The first returnable set of data will be returned - if the statements provided
+        include multiple selects, results from only the first will be returned.
+        Future implementations may allow for a sequence of results to be returned.
+        """
         if self.sql is None:
             self.construct_query()
+        statements = self._split_sql()
+        single_statement = True if len(statements) == 1 and self.filename else False
         try:
-            result_proxy = self.cm.conn.execute(self.sql)
-            logger.info("Executed {} against {}".format(self.filename or str(self.sql)[:25], self.cm.db))
+            for statement in statements:
+                result_proxy = self.cm.conn.execute(statement)
+                log_string = self.filename if single_statement else str(statement)[:25]
+                logger.info("Executed {} against {}".format(log_string, self.cm.db))
             if result_proxy.cursor:
                 return self.fetch_results(result_proxy)
         except Exception as e:
             logger.exception(e)
             raise
+
+    def _split_sql(self):
+        """
+        Returns a list containing individual sql statements to be executed.
+        `sql` is usually a string, so this method usually returns a list of strings.
+        if `sql is not a string - most likely, a sqlalchemy statement - it is not
+        split`
+        """
+        if isinstance(self.sql, str):
+            return [stmt.strip() for stmt in RE_SQL_STATEMENT.split(self.sql) if stmt.strip()]
+        else:
+            return [self.sql]
 
     @staticmethod
     def fetch_results(result_proxy):
@@ -195,11 +220,11 @@ class QueryReader(object):
 
 class QueryExecutor(object):
     """
-    QueryExecutor acts as a context manager for the execution of a given query against the selected database.
-    Open database connection, execute query, and close the connection.
+    QueryExecutor acts as a context manager for the execution of a one or more queries against the selected database.
+    Keeps database connection open for duration of `with` block and closes afterwards.
     Usage:
-    with QueryExecutor(db=MyDB, sql='select count(*) from my_table') as qe:
-        result = qe.execute_query()
+    with QueryExecutor(db=MyDB) as qe:
+        result = qe.execute_query(sql='select count(*) from my_table')
     """
     def __init__(self, db):
         self.db = db
