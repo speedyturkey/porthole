@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from .app import config
 from .connections import ConnectionPool
 from .mailer import Mailer
@@ -250,6 +251,37 @@ class GenericReport(BasicReport, Loggable):
             self.send_failure_notification()
         self.conns.close_all()
 
+
+class ReportRunner(ArgumentParser):
+    def __init__(self, report_map=None):
+        super().__init__(description="Runs the report designated by the -r or --report parameter. To see a list of available reports, use -l or --list.")
+        self.add_argument("-l, --list", action='store_true', dest='list', help="show a list of available reports")
+        self.add_argument("-r, --report", dest='report', help="name of report to run")
+        self.add_argument("-p, --ping", action='store_true', dest='ping', help="this is used for health checking.")
+        self.args = super().parse_args()
+        self.report_map = report_map if report_map is not None else {}
+
+    def handle_args(self):
+        if self.args.list:
+            self.list_reports()
+        elif self.args.report:
+            self.run_report()
+
+    def list_reports(self):
+        print("The following reports are available to run:")
+        for report in self.report_map.keys():
+            print(report)
+
+    def run_report(self):
+        report_name = self.args.report
+        report_function = self.report_map.get(report_name)
+        if report_function:
+            logger.info("Received call to run {}".format(report_name))
+            report_function()
+        else:
+            error_message = "Report Runner is unable to run: {}. There is no report function mapped to this name".format(report_name)
+            logger.error(error_message)
+            raise ValueError(error_message)
 
 
 
