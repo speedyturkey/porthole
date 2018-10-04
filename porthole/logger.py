@@ -16,14 +16,18 @@ class PortholeLogger(object):
 
     def __init__(self, name, logfile=None, fmt=DEFAULT_FORMAT, datefmt=DEFAULT_DATE_FORMAT):
         # Get config values
-        log_to_file = config['Logging'].getboolean('log_to_file')
-        default_logfile = config['Logging'].get('logfile')
+        try:
+            log_to_file = config['Logging'].getboolean('log_to_file')
+            default_logfile = config['Logging'].get('logfile')
+        except KeyError:
+            log_to_file = False
+            default_logfile = None
 
         # Create Logger, Formatter, and StreamHandler
         logger = logging.getLogger(name)
         logger.setLevel(logging.INFO)
-        formatter = logging.Formatter(  fmt=fmt,
-                                        datefmt=datefmt)
+        formatter = logging.Formatter(fmt=fmt,
+                                      datefmt=datefmt)
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
@@ -32,7 +36,6 @@ class PortholeLogger(object):
             file_handler = logging.FileHandler(logfile)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
-
         self.logger = logger
         self.logger.level = logging.INFO
 

@@ -16,8 +16,10 @@ class TestReportWriter(unittest.TestCase):
     def test_create_workbook(self):
         writer = ReportWriter("Test Report")
         writer.build_file()
+        writer.close_workbook()
         self.assertIsNotNone(writer.workbook_builder)
         self.assertTrue(os.path.isfile(writer.report_file))
+        os.unlink(writer.report_file)
 
     def test_create_worksheet(self):
         writer = ReportWriter("Test Report")
