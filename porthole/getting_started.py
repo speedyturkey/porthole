@@ -38,10 +38,8 @@ Email = OrderedDict([(
 ])
 
 Logging = OrderedDict([
-    ('server', "FALSE"),
     ('log_to_file', "FALSE"),
     ('logfile', NONE),
-    ('logging_db', NONE)
 ])
 
 Debug = OrderedDict([
