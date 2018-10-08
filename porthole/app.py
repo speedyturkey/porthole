@@ -1,8 +1,8 @@
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 config_file = 'config/config.ini'
-config = SafeConfigParser(os.environ, interpolation=None)
+config = ConfigParser(os.environ, interpolation=None)
 config.read(config_file)
 
 
