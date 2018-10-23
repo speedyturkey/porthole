@@ -3,7 +3,6 @@ Mailer.py
 
 """
 
-import sys
 import os
 import smtplib
 from email import encoders
@@ -19,9 +18,9 @@ COMMASPACE = ', '
 
 
 class Mailer:
-    def __init__(self, recipients=[], cc_recipients=[], **kwargs):
-        self.recipients = recipients
-        self.cc_recipients = cc_recipients
+    def __init__(self, recipients=None, cc_recipients=None, **kwargs):
+        self.recipients = recipients or []
+        self.cc_recipients = cc_recipients or []
         self.properties = kwargs
         self.debug_mode = config.getboolean('Debug', 'debug_mode')
         debug_recipients = config['Debug']['debug_recipients']
@@ -99,6 +98,7 @@ Active report would have been sent to:
         except Exception as e:
             logger.exception(e)
             raise
+
 
 if __name__ == '__main__':
     pass
