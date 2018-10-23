@@ -11,8 +11,9 @@ configdir = 'config'
 configfile = 'config.ini'
 configpath = os.path.join(configdir, configfile)
 
-Default = OrderedDict([(
-    'base_file_path', NONE),
+Default = OrderedDict([
+    ('project', None),
+    ('base_file_path', NONE),
     ('query_path', NONE),
     ('database', NONE),
     ('notification_recipient', NONE)
