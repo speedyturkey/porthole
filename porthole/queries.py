@@ -74,16 +74,17 @@ class RowDict(OrderedDict):
 
 class QueryGenerator(object):
     """Execute SQL query and return results"""
-    def __init__(self, cm, filename=None, params=None, sql=None):
+    def __init__(self, cm, filename=None, params=None, sql=None, multiple_statements=False):
         if filename is not None and sql is not None:
             raise TypeError("Cannot give both 'filename' and 'sql' arguments")
         self.cm = cm
         self.filename = filename
         self.params = params
         self.sql = sql
+        self.multiple_statements = multiple_statements
 
     def construct_query(self):
-        "Read and parameterize (if necessary) a .sql file for execution."
+        """Read and parameterize (if necessary) a .sql file for execution."""
         if self.filename:
             reader = QueryReader(filename=self.filename, params=self.params)
             self.sql = reader.sql
@@ -99,7 +100,11 @@ class QueryGenerator(object):
         """
         if self.sql is None:
             self.construct_query()
-        statements = self._split_sql()
+        # Only SQL strings can be split, not (e.g.) SQLAlchemy statements.
+        if self.multiple_statements and isinstance(self.sql, str):
+            statements = self._split_sql()
+        else:
+            statements = [self.sql]
         single_statement = True if len(statements) == 1 and self.filename else False
         try:
             for statement in statements:
@@ -114,15 +119,9 @@ class QueryGenerator(object):
 
     def _split_sql(self):
         """
-        Returns a list containing individual sql statements to be executed.
-        `sql` is usually a string, so this method usually returns a list of strings.
-        if `sql is not a string - most likely, a sqlalchemy statement - it is not
-        split`
+        Returns a list containing individual sql statements as strings to be executed.
         """
-        if isinstance(self.sql, str):
-            return [stmt.strip() for stmt in RE_SQL_STATEMENT.split(self.sql) if stmt.strip()]
-        else:
-            return [self.sql]
+        return [stmt.strip() for stmt in RE_SQL_STATEMENT.split(self.sql) if stmt.strip()]
 
     @staticmethod
     def fetch_results(result_proxy):
@@ -237,12 +236,13 @@ class QueryExecutor(object):
     def close_database_connection(self):
         self.cm.close()
 
-    def execute_query(self, filename=None, params=None, sql=None):
+    def execute_query(self, filename=None, params=None, sql=None, multiple_statements=False):
         query = QueryGenerator(
             cm=self.cm,
             filename=filename,
             params=params,
-            sql=sql
+            sql=sql,
+            multiple_statements=multiple_statements
         )
         return query.execute()
 
