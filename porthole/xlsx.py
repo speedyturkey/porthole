@@ -1,6 +1,7 @@
 import datetime
 import xlsxwriter
 
+
 class WorkbookBuilder(object):
     """
     Allows for creation of Excel workbooks containing arbitrary worksheets
@@ -13,20 +14,22 @@ class WorkbookBuilder(object):
     def __init__(self, filename=None):
         self.filename = filename
         self.header_params = {'bold': True}
-        self.workbook_options = {'constant_memory': True,
-                                'default_date_format': 'mm/dd/yy'}
+        self.header_format = None
+        self.workbook_options = {
+            'constant_memory': True,
+            'default_date_format': 'mm/dd/yy'}
+        self.workbook = None
         if filename:
             self.create_workbook()
 
     def create_workbook(self):
-        "Given filename, workbook options, and head format, create workbook."
+        """Given filename, workbook options, and head format, create workbook."""
         workbook = xlsxwriter.Workbook(self.filename, self.workbook_options)
         self.header_format = workbook.add_format(self.header_params)
         self.workbook = workbook
 
-
     def close_workbook(self):
-        "An exception may be raised if workbook is not closed explicitly."
+        """An exception may be raised if workbook is not closed explicitly."""
         self.workbook.close()
 
     def add_worksheet(self, sheet_name, field_names, sheet_data, row_start=0, col_start=0, autofit_columns=False,

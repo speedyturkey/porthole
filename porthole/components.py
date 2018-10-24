@@ -122,7 +122,7 @@ class ReportWriter(Loggable):
             self.log_error(error)
 
     def make_worksheet(self, sheet_name, query_results, **kwargs):
-        "Adds worksheet to workbook using provided query results."
+        """Adds worksheet to workbook using provided query results."""
         try:
             self.workbook_builder.add_worksheet(sheet_name=sheet_name,
                                                 field_names=query_results.field_names,
@@ -134,7 +134,7 @@ class ReportWriter(Loggable):
             logger.error(error)
             self.log_error(error)
 
-    def create_worksheet_from_query(self, cm, sheet_name, query={}, sql=None, **kwargs):
+    def create_worksheet_from_query(self, cm, sheet_name, query=None, sql=None, query_kwargs=None, worksheet_kwargs=None):
         """
         Args:
             cm              (ConnectionManager):
@@ -142,17 +142,25 @@ class ReportWriter(Loggable):
             sheet_name      (str): The name of the worksheet to be created.
             query           (dict): Optional. May contain filename and params for a query
                                 to be executed. If included, filename is required.
-                    filename      (str): Name of file to be read without extension.
-                    params        (dict): Optional. Contains parameter names and values,
+                filename      (str): Name of file to be read without extension.
+                params        (dict): Optional. Contains parameter names and values,
                                 if applicable. Should only be included along with
                                 query_file containing parameter placeholders.
             sql             (str or sqlalchemy.sql.selectable.Select statement):
                                 Optional. A SQL query ready for execution.
+            query_kwargs    (dict): Optional. Dictionary of keyword arguments to pass to `execute_query`.
+            worksheet_kwargs (dict): Optional. Dictionary of keyword arguments to pass to `make_worksheet`
 
         Executes a query and uses results to add worksheet to ReportWriter.workbook_builder.
         """
-        results = self.execute_query(cm=cm, query=query, sql=sql)
-        self.make_worksheet(sheet_name=sheet_name, query_results=results, **kwargs)
+        if query is None:
+            query = {}
+        if query_kwargs is None:
+            query_kwargs = {}
+        if worksheet_kwargs is None:
+            worksheet_kwargs = {}
+        results = self.execute_query(cm=cm, query=query, sql=sql, **query_kwargs)
+        self.make_worksheet(sheet_name=sheet_name, query_results=results, **worksheet_kwargs)
 
 
 class DatabaseLogger(Loggable):

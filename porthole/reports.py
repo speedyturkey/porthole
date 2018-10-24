@@ -31,6 +31,7 @@ class BasicReport(Loggable):
         self.error_log = []
         self.to_recipients = []
         self.cc_recipients = []
+        self.email = None
         self.email_sent = False
         self.failure_notification_sent = False
         self.file_path = config['Default'].get('base_file_path')
@@ -58,25 +59,30 @@ class BasicReport(Loggable):
     def create_worksheet_from_query(self,
                                     sheet_name,
                                     db=None,
-                                    query={},
+                                    query=None,
                                     sql=None,
-                                    **kwargs):
+                                    query_kwargs=None,
+                                    worksheet_kwargs=None):
         """Delegates functionality to ReportWriter."""
         if db is None:
             db = self.default_db
         cm = self.add_conn(db)
-        self.report_writer.create_worksheet_from_query(cm=cm,
-                                                        sheet_name=sheet_name,
-                                                        query=query,
-                                                        sql=sql,
-                                                        **kwargs)
+        self.report_writer.create_worksheet_from_query(
+            cm=cm,
+            sheet_name=sheet_name,
+            query=query,
+            sql=sql,
+            query_kwargs=query_kwargs,
+            worksheet_kwargs=worksheet_kwargs
+        )
 
     def make_worksheet(self, sheet_name, query_results, **kwargs):
         """Delegates functionality to ReportWriter."""
-        self.report_writer.make_worksheet(sheet_name=sheet_name,
-                                            query_results=query_results,
-                                            **kwargs
-                                            )
+        self.report_writer.make_worksheet(
+            sheet_name=sheet_name,
+            query_results=query_results,
+            **kwargs
+        )
 
     def build_email(self):
         """Instantiates Mailer object using provided parameters."""
@@ -125,8 +131,10 @@ class BasicReport(Loggable):
         self.conns.close_all()
 
     def send_failure_notification(self):
-        notifier = ReportErrorNotifier( report_title=self.report_title,
-                                        error_log=self.error_log)
+        notifier = ReportErrorNotifier(
+            report_title=self.report_title,
+            error_log=self.error_log
+        )
         notifier.send_log_by_email()
         if notifier.notified:
             self.failure_notification_sent = True
@@ -196,6 +204,8 @@ class GenericReport(BasicReport, Loggable):
         self.report_name = report_name
         self.logging_enabled = logging_enabled
         self.send_if_blank = send_if_blank
+        self.db_logger = None
+        self.active = None
         self.check_if_active()
         if self.active:
             self.initialize_db_logger()
@@ -208,22 +218,28 @@ class GenericReport(BasicReport, Loggable):
             return 0
 
     def initialize_db_logger(self):
-        self.db_logger = DatabaseLogger( cm=self.get_conn(self.default_db),
-                                         report_name=self.report_name,
-                                         log_to=self.error_log)
+        self.db_logger = DatabaseLogger(
+            cm=self.get_conn(self.default_db),
+            report_name=self.report_name,
+            log_to=self.error_log
+        )
         self.db_logger.create_record()
 
     def check_if_active(self):
-        self.active = ReportActiveChecker(  cm=self.get_conn(self.default_db),
-                                            report_name=self.report_name,
-                                            log_to=self.error_log)
+        self.active = ReportActiveChecker(
+            cm=self.get_conn(self.default_db),
+            report_name=self.report_name,
+            log_to=self.error_log
+        )
 
     def get_recipients(self):
         """Performs lookup in database for report recipients based on report name."""
 
-        checker = RecipientsChecker( cm=self.get_conn(self.default_db),
-                                     report_name=self.report_name,
-                                     log_to=self.error_log)
+        checker = RecipientsChecker(
+            cm=self.get_conn(self.default_db),
+            report_name=self.report_name,
+            log_to=self.error_log
+        )
         self.to_recipients, self.cc_recipients = checker.get_recipients()
 
     def check_whether_to_send_email(self):
@@ -282,7 +298,6 @@ class ReportRunner(ArgumentParser):
             error_message = "Report Runner is unable to run: {}. There is no report function mapped to this name".format(report_name)
             logger.error(error_message)
             raise ValueError(error_message)
-
 
 
 if __name__ == '__main__':
