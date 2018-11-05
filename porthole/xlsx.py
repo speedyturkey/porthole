@@ -181,6 +181,13 @@ def create_cell_formats(data, format_axis=None, format_rules=None):
         conditional: format any values with one or more provided format names. The provided `function` should accept
             cell values and return the format name (or None).
 
+    Sample usage:
+
+    format_rules = {
+        'salary': {'type': 'all', 'format': 'money'},
+        'age': {'type': 'boolean', 'format': 'bold_red', 'function': lambda field: field % 2 == 0},
+    }
+
     :type format_rules: Dictionary, with keys representing column names (if applying column rules).
     :return: List of lists of strings, where each is the name of the format object to be applied to that data
         element, or None if no format is to be applied.
