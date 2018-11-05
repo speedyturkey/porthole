@@ -2,11 +2,12 @@ import os, sys
 from sqlalchemy import select
 from . import TimeHelper
 from .app import config
-from .models import (metadata,
-                    automated_reports,
-                    automated_report_contacts,
-                    automated_report_recipients,
-                    report_logs)
+from .models import (
+    automated_reports,
+    automated_report_contacts,
+    automated_report_recipients,
+    report_logs
+)
 from .mailer import Mailer
 from .related_record import RelatedRecord
 from .queries import QueryGenerator
@@ -91,6 +92,9 @@ class ReportWriter(Loggable):
         if self.workbook_builder:
             self.workbook_builder.workbook.close()
 
+    def add_format(self, format_name, format_params):
+        self.workbook_builder.add_format(format_name, format_params)
+
     def execute_query(self, cm, query={}, sql=None, increment_counter=True):
         """
         Args:
@@ -124,11 +128,12 @@ class ReportWriter(Loggable):
     def make_worksheet(self, sheet_name, query_results, **kwargs):
         """Adds worksheet to workbook using provided query results."""
         try:
-            self.workbook_builder.add_worksheet(sheet_name=sheet_name,
-                                                field_names=query_results.field_names,
-                                                sheet_data=query_results.result_data,
-                                                **kwargs
-                                            )
+            self.workbook_builder.add_worksheet(
+                sheet_name=sheet_name,
+                field_names=query_results.field_names,
+                sheet_data=query_results.result_data,
+                **kwargs
+            )
         except:
             error = "Unable to add worksheet {}".format(sheet_name)
             logger.error(error)

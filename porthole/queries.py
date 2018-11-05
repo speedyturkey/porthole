@@ -10,6 +10,7 @@ logger = PortholeLogger(name=__name__)
 
 RE_SQL_STATEMENT = re.compile(''';(?=(?:[^"'`]*["'`][^"'`]*["'`])*[^"'`]*$)''')
 
+
 class QueryResult(object):
     """Represent result data from an executed query. Includes capability to write results as json."""
 
