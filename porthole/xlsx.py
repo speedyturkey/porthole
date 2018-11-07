@@ -123,7 +123,7 @@ class WorkbookBuilder(object):
         return col_widths
 
 
-def apply_column_rule(value, rule):
+def apply_column_rule(row, rule):
     """
     Given a cell value and a rule, return a format name. See `create_cell_formats` for more detail.
     """
@@ -131,12 +131,12 @@ def apply_column_rule(value, rule):
     if rule_type == 'all':
         return rule['format']
     if rule_type == 'boolean':
-        if rule['function'](value):
+        if rule['function'](row):
             return rule['format']
         else:
             return None
     if rule_type == 'conditional':
-        return rule['function'](value)
+        return rule['function'](row)
     raise ValueError(f"Column rule type <{rule['type']}> not supported")
 
 
@@ -147,7 +147,7 @@ def create_column_formats(data, format_rules):
     result = []
     for row in data:
         row_formats = [
-            apply_column_rule(row[col_name], format_rules[col_name]) if col_name in format_rules else None
+            apply_column_rule(row, format_rules[col_name]) if col_name in format_rules else None
             for col_name in row.keys()
         ]
         result.append(row_formats)
@@ -177,7 +177,7 @@ def create_cell_formats(data, format_axis=None, format_rules=None):
     Possible values for `type` include:
         all: format the entire column using the provided format name.
         boolean: format any values with the provided format name, which test as True using a provided `function`,
-            The functions should accept cell values and return True or False.
+            The functions should accept a RowDict and return True or False.
         conditional: format any values with one or more provided format names. The provided `function` should accept
             cell values and return the format name (or None).
 
@@ -185,7 +185,7 @@ def create_cell_formats(data, format_axis=None, format_rules=None):
 
     format_rules = {
         'salary': {'type': 'all', 'format': 'money'},
-        'age': {'type': 'boolean', 'format': 'bold_red', 'function': lambda field: field % 2 == 0},
+        'age': {'type': 'boolean', 'format': 'bold_red', 'function': lambda row: row['field'] % 2 == 0},
     }
 
     :type format_rules: Dictionary, with keys representing column names (if applying column rules).
