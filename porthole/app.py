@@ -36,12 +36,6 @@ class PortholeConfig(ConfigParser):
             "or creating a porthole.ini file in your main project directory."
         )
 
-    @staticmethod
-    def read_config(config_file: str) -> ConfigParser:
-        parser = ConfigParser(os.environ, interpolation=None)
-        parser.read(config_file)
-        return parser
-
 
 config = PortholeConfig()
 
