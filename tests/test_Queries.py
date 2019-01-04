@@ -104,6 +104,18 @@ class TestRowDict(unittest.TestCase):
         self.assertIn('Bar', test_row.values())
         self.assertEqual(headers + ['Foo'], list(test_row.keys()))
 
+    def test_unique_field_name_constraint(self):
+        with self.assertRaises(ValueError):
+            RowDict(
+                fields=['A', 'A'],
+                values=[[1, 2]]
+            )
+        with self.assertRaises(ValueError):
+            RowDict(
+                fields=['A', 'B', 'A'],
+                values=[[1, 2, 3]]
+            )
+
 
 headers = ['Name', 'DOB']
 row1 = ['Billy', date(1988, 4, 24)]
