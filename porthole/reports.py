@@ -1,3 +1,4 @@
+import os
 from argparse import ArgumentParser
 from .app import config
 from .connections import ConnectionPool
@@ -9,6 +10,7 @@ from .components import (DatabaseLogger,
                          ReportErrorNotifier,
                          ReportWriter)
 from .logger import PortholeLogger
+from .uploaders import S3Uploader
 
 logger = PortholeLogger(name=__name__)
 
@@ -21,7 +23,7 @@ class BasicReport(Loggable):
     :report_title: Used in the filename of the resulting report.
 
     """
-    def __init__(self, report_title):
+    def __init__(self, report_title, debug_mode=False):
         # -----------------------------------------
         # Assign arguments to instance attributes.
         # -----------------------------------------
@@ -32,6 +34,7 @@ class BasicReport(Loggable):
         self.to_recipients = []
         self.cc_recipients = []
         self.email = None
+        self.debug_mode = debug_mode
         self.email_sent = False
         self.failure_notification_sent = False
         self.file_path = config['Default'].get('base_file_path')
@@ -86,9 +89,11 @@ class BasicReport(Loggable):
 
     def build_email(self):
         """Instantiates Mailer object using provided parameters."""
-        email = Mailer()
-        email.recipients = self.to_recipients
-        email.cc_recipients = self.cc_recipients
+        email = Mailer(
+            recipients=self.to_recipients,
+            cc_recipients=self.cc_recipients,
+            debug_mode=self.debug_mode
+        )
         email.subject = self.subject
         email.message = self.message
         email.attachments = self.attachments
@@ -103,7 +108,7 @@ class BasicReport(Loggable):
             logger.exception(e)
             self.log_error("Unable to send email")
 
-    def check_whether_to_send_email(self):
+    def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors and settings."""
         if self.error_log:
             return False
@@ -112,7 +117,7 @@ class BasicReport(Loggable):
 
     def build_and_send_email(self):
         """If email should be sent, builds email object and sends email."""
-        if self.check_whether_to_send_email():
+        if self.check_whether_to_publish():
             self.build_email()
             self.send_email()
 
@@ -196,18 +201,23 @@ class GenericReport(BasicReport, Loggable):
         automated_report_contacts table, add them to it.
 
     """
-    def __init__(self, report_title, report_name, logging_enabled=True, send_if_blank=True):
+    def __init__(self, report_title, report_name, logging_enabled=True, send_if_blank=True,
+                 publish_to='email', debug_mode=False):
         # -----------------------------------------
         # Assign arguments to instance attributes.
         # -----------------------------------------
-        super().__init__(report_title=report_title)
+        super().__init__(report_title=report_title, debug_mode=debug_mode)
         self.report_name = report_name
         self.logging_enabled = logging_enabled
         self.send_if_blank = send_if_blank
+        if publish_to.lower() not in ['s3', 'email', 'both']:
+            raise ValueError("Reports can only be published to s3 or email.")
+        self.publish_to = publish_to.lower()
         self.db_logger = None
         self.active = None
+        self.uploaded_to_s3 = False
         self.check_if_active()
-        if self.active:
+        if self.active and self.logging_enabled:
             self.initialize_db_logger()
 
     @property
@@ -242,7 +252,7 @@ class GenericReport(BasicReport, Loggable):
         )
         self.to_recipients, self.cc_recipients = checker.get_recipients()
 
-    def check_whether_to_send_email(self):
+    def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors, settings, and result count."""
         if self.error_log:
             return False
@@ -261,11 +271,32 @@ class GenericReport(BasicReport, Loggable):
         if self.report_writer:
             self.report_writer.close_workbook()
         if self.active:
-            self.build_and_send_email()
+            if self.check_whether_to_publish():
+                self.publish()
             self.db_logger.finalize_record()
         if self.error_log:
             self.send_failure_notification()
         self.conns.close_all()
+
+    def publish(self):
+        if self.publish_to == 'email':
+            self.build_and_send_email()
+        elif self.publish_to == 's3':
+            self.upload_to_s3()
+        elif self.publish_to == 'both':
+            self.build_and_send_email()
+            self.upload_to_s3()
+
+    def upload_to_s3(self):
+        try:
+            uploader = S3Uploader(debug_mode=self.debug_mode)
+            uploaded = []
+            for attachment in self.attachments:
+                success = uploader.upload_file(key=os.path.basename(attachment), filename=attachment)
+                uploaded.append(success)
+            self.uploaded_to_s3 = all(uploaded)
+        except:
+            self.log_error_detail("Unable to upload to S3")
 
 
 class ReportRunner(ArgumentParser):
