@@ -14,4 +14,7 @@ setup(name='porthole',
                         'xlsxwriter',
                         'SQLAlchemy'
                     ],
+      extras_require={
+        'AWS': ["boto3"]
+      },
       zip_safe=False)
