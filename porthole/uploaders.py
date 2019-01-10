@@ -11,7 +11,7 @@ logger = PortholeLogger("porthole.Uploaders")
 
 
 class S3Uploader(object):
-    def __init__(self, debug_mode=False):
+    def __init__(self, debug_mode: bool = False) -> None:
         if boto3 is None or TransferConfig is None:
             raise ModuleNotFoundError(
                 "boto3 is a required dependency to use the S3Uploader class, but is not currently installed."
@@ -27,7 +27,7 @@ class S3Uploader(object):
         session = boto3.Session(**session_params)
         self.session = session.client('s3')
 
-    def upload_file(self, key, filename, bucket=None, s3config=None):
+    def upload_file(self, key: str, filename: str, bucket: str = None, s3config: TransferConfig = None) -> bool:
         if self.debug_mode:
             logger.info(
                 f"Debug mode active. Would have uploaded {filename} to {bucket}/{key}."
@@ -36,7 +36,7 @@ class S3Uploader(object):
         else:
             return self._upload_file(key, filename, bucket, s3config)
 
-    def _upload_file(self, key, filename, bucket=None, s3config=None):
+    def _upload_file(self, key: str, filename: str, bucket: str = None, s3config: TransferConfig = None) -> bool:
         if bucket is None:
             bucket = self.bucket
         if s3config is None:
