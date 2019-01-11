@@ -35,6 +35,8 @@ class BasicReport(Loggable):
         self.to_recipients = []
         self.cc_recipients = []
         self.email = None
+        self.subject = None
+        self.message = None
         self.debug_mode = debug_mode
         self.email_sent = False
         self.failure_notification_sent = False
@@ -325,10 +327,11 @@ class ReportRunner(ArgumentParser):
         report_name = self.args.report
         report_function = self.report_map.get(report_name)
         if report_function:
-            logger.info("Received call to run {}".format(report_name))
             if 'debug_mode' in getfullargspec(report_function).args:
+                logger.info(f"Received call to run {report_name} in debug mode.")
                 report_function(debug_mode=self.args.debug)
             else:
+                logger.info(f"Received call to run {report_name}")
                 report_function()
         else:
             error_message = "Report Runner is unable to run: {}. There is no report function mapped to this name".format(report_name)

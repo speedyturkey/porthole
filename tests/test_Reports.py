@@ -38,6 +38,23 @@ class TestBasicReport(unittest.TestCase):
         report.message = 'Basic Report Test'
         report.execute()
 
+    def test_debug_mode_integration(self):
+        config.set('Debug', 'debug_mode', 'False')
+        report = BasicReport(report_title='Basic Report - Test', debug_mode=True)
+        report.send_email = MethodType(mocked_send_email, report)
+        report.build_file()
+        report.create_worksheet_from_query(
+            sheet_name='Sheet1',
+            sql=TEST_QUERY
+        )
+        report.to_recipients.append(config['Default']['notification_recipient'])
+        report.subject = 'Basic Report - Test'
+        report.message = 'Basic Report Test'
+        report.execute()
+        self.assertTrue(report.debug_mode)
+        self.assertTrue(report.email.debug_mode)
+        config.set('Debug', 'debug_mode', 'True')
+
 
 class TestGenericReport(unittest.TestCase):
 
@@ -99,7 +116,7 @@ class TestGenericReport(unittest.TestCase):
                                     report_name='does_not_exist'
                                     , report_title='Does Not Exist'
                                     )
-        self.assertTrue('Report does_not_exist does not exist' in str(context.exception))
+        self.assertTrue("Report <does_not_exist> was not found" in str(context.exception))
 
     def test_non_existent_query_raises_error(self):
         """Should raise an error if attempt to run query that doesn't exist"""
