@@ -1,6 +1,5 @@
 import unittest
 from sqlalchemy.exc import StatementError
-from porthole import config
 from porthole import ConnectionManager
 
 

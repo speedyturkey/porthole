@@ -76,7 +76,9 @@ class ReportWriter(Loggable):
         """
         try:
             # Construct the file path and create the workbook.
-            report_file_name = "{} - {}.xlsx".format(TimeHelper.today(), self.report_title)
+            local_timezone = config['Default'].get('local_timezone') or 'UTC'
+            today = TimeHelper.today(timezone=local_timezone)
+            report_file_name = f"{today} - {self.report_title}.xlsx"
             self.report_file = os.path.join(self.file_path, report_file_name)
             self.workbook_builder = WorkbookBuilder(filename=self.report_file)
         except:
@@ -234,7 +236,10 @@ class ReportActiveChecker(Loggable):
             else:
                 self.active = False
         except IndexError:
-            error = "Report {} does not exist".format(self.report_name)
+            error = (
+                f"Report <{self.report_name}> was not found in the {automated_reports.name} table. "
+                f"Ensure <{self.report_name}> matches a record in the table and try again."
+            )
             logger.error(error)
             self.log_error(error)
             raise Exception(error)

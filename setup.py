@@ -12,7 +12,8 @@ setup(name='porthole',
                         'pymysql',
                         'psycopg2',
                         'xlsxwriter',
-                        'SQLAlchemy'
+                        'SQLAlchemy',
+                        'pytz'
                     ],
       extras_require={
         'AWS': ["boto3"]

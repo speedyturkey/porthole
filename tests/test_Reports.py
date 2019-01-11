@@ -7,7 +7,7 @@ Test email is not sent on failure.
 
 from types import MethodType
 import unittest
-from porthole import config, BasicReport, GenericReport
+from porthole import config, BasicReport, GenericReport, ReportRunner
 import pickle
 
 
@@ -129,6 +129,36 @@ class TestGenericReport(unittest.TestCase):
         report.execute()
         self.assertFalse(report.email_sent)
         self.assertTrue(report.failure_notification_sent)
+
+
+class TestReportRunner(unittest.TestCase):
+    def test_list_arg(self):
+        parsed = ReportRunner().parse_args()
+        self.assertFalse(parsed.list)
+        parsed = ReportRunner().parse_args(['-l'])
+        self.assertTrue(parsed.list)
+        parsed = ReportRunner().parse_args(['--list'])
+        self.assertTrue(parsed.list)
+
+    def test_report_arg(self):
+        report = 'test_report'
+        parsed = ReportRunner().parse_args()
+        self.assertIsNone(parsed.report)
+        parsed = ReportRunner().parse_args(['-r', report])
+        self.assertEqual(report, parsed.report)
+        parsed = ReportRunner().parse_args(['--report', report])
+        self.assertEqual(report, parsed.report)
+
+    def test_debug_mode_arg(self):
+        parsed = ReportRunner().parse_args()
+        self.assertFalse(parsed.debug_mode)
+        parsed = ReportRunner().parse_args(['-d'])
+        self.assertTrue(parsed.debug_mode)
+        parsed = ReportRunner().parse_args(['--debug'])
+        self.assertTrue(parsed.debug_mode)
+
+
+
 
 TEST_QUERY = "select count(*) from flarp;"
 

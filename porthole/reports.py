@@ -1,4 +1,5 @@
 import os
+from inspect import getfullargspec
 from argparse import ArgumentParser
 from .app import config
 from .connections import ConnectionPool
@@ -302,9 +303,10 @@ class GenericReport(BasicReport, Loggable):
 class ReportRunner(ArgumentParser):
     def __init__(self, report_map=None):
         super().__init__(description="Runs the report designated by the -r or --report parameter. To see a list of available reports, use -l or --list.")
-        self.add_argument("-l, --list", action='store_true', dest='list', help="show a list of available reports")
-        self.add_argument("-r, --report", dest='report', help="name of report to run")
-        self.add_argument("-p, --ping", action='store_true', dest='ping', help="this is used for health checking.")
+        self.add_argument("-l", "--list", action='store_true', dest='list', help="show a list of available reports")
+        self.add_argument("-r", "--report", dest='report', help="name of report to run")
+        self.add_argument("-d", "--debug", action='store_true', dest='debug_mode', help="run the requested report in debug mode, if defined")
+        self.add_argument("-p", "--ping", action='store_true', dest='ping', help="this is used for health checking.")
         self.args = super().parse_args()
         self.report_map = report_map if report_map is not None else {}
 
@@ -324,7 +326,10 @@ class ReportRunner(ArgumentParser):
         report_function = self.report_map.get(report_name)
         if report_function:
             logger.info("Received call to run {}".format(report_name))
-            report_function()
+            if 'debug_mode' in getfullargspec(report_function).args:
+                report_function(debug_mode=self.args.debug)
+            else:
+                report_function()
         else:
             error_message = "Report Runner is unable to run: {}. There is no report function mapped to this name".format(report_name)
             logger.error(error_message)
