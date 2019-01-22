@@ -7,7 +7,7 @@ Test email is not sent on failure.
 
 from types import MethodType
 import unittest
-from porthole import config, BasicReport, GenericReport
+from porthole import config, BasicReport, GenericReport, ReportRunner
 import pickle
 
 
@@ -37,6 +37,23 @@ class TestBasicReport(unittest.TestCase):
         report.subject = 'Basic Report - Test'
         report.message = 'Basic Report Test'
         report.execute()
+
+    def test_debug_mode_integration(self):
+        config.set('Debug', 'debug_mode', 'False')
+        report = BasicReport(report_title='Basic Report - Test', debug_mode=True)
+        report.send_email = MethodType(mocked_send_email, report)
+        report.build_file()
+        report.create_worksheet_from_query(
+            sheet_name='Sheet1',
+            sql=TEST_QUERY
+        )
+        report.to_recipients.append(config['Default']['notification_recipient'])
+        report.subject = 'Basic Report - Test'
+        report.message = 'Basic Report Test'
+        report.execute()
+        self.assertTrue(report.debug_mode)
+        self.assertTrue(report.email.debug_mode)
+        config.set('Debug', 'debug_mode', 'True')
 
 
 class TestGenericReport(unittest.TestCase):
@@ -99,7 +116,7 @@ class TestGenericReport(unittest.TestCase):
                                     report_name='does_not_exist'
                                     , report_title='Does Not Exist'
                                     )
-        self.assertTrue('Report does_not_exist does not exist' in str(context.exception))
+        self.assertTrue("Report <does_not_exist> was not found" in str(context.exception))
 
     def test_non_existent_query_raises_error(self):
         """Should raise an error if attempt to run query that doesn't exist"""
@@ -129,6 +146,36 @@ class TestGenericReport(unittest.TestCase):
         report.execute()
         self.assertFalse(report.email_sent)
         self.assertTrue(report.failure_notification_sent)
+
+
+class TestReportRunner(unittest.TestCase):
+    def test_list_arg(self):
+        parsed = ReportRunner().parse_args()
+        self.assertFalse(parsed.list)
+        parsed = ReportRunner().parse_args(['-l'])
+        self.assertTrue(parsed.list)
+        parsed = ReportRunner().parse_args(['--list'])
+        self.assertTrue(parsed.list)
+
+    def test_report_arg(self):
+        report = 'test_report'
+        parsed = ReportRunner().parse_args()
+        self.assertIsNone(parsed.report)
+        parsed = ReportRunner().parse_args(['-r', report])
+        self.assertEqual(report, parsed.report)
+        parsed = ReportRunner().parse_args(['--report', report])
+        self.assertEqual(report, parsed.report)
+
+    def test_debug_mode_arg(self):
+        parsed = ReportRunner().parse_args()
+        self.assertFalse(parsed.debug_mode)
+        parsed = ReportRunner().parse_args(['-d'])
+        self.assertTrue(parsed.debug_mode)
+        parsed = ReportRunner().parse_args(['--debug'])
+        self.assertTrue(parsed.debug_mode)
+
+
+
 
 TEST_QUERY = "select count(*) from flarp;"
 

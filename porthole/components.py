@@ -36,8 +36,8 @@ class Loggable(object):
             self.error_log = []
             self.component = Component(log_to=self.error_log)
     """
-    def __init__(self, log_to=[]):
-        self.error_log = log_to
+    def __init__(self, log_to=None):
+        self.error_log = log_to if log_to is not None else []
 
     def log_error(self, msg=None):
         """
@@ -61,13 +61,13 @@ class ReportWriter(Loggable):
     """
     #TODO: Think of a better name for this class.
 
-    def __init__(self, report_title, log_to=[]):
+    def __init__(self, report_title, log_to=None):
         self.report_title = report_title
         self.report_file = None
         self.file_path = config['Default'].get('base_file_path')
         self.workbook_builder = None
         self.record_count = 0
-        super().__init__(log_to=log_to)
+        super().__init__(log_to=log_to if log_to is not None else [])
 
     def build_file(self):
         """
@@ -76,7 +76,9 @@ class ReportWriter(Loggable):
         """
         try:
             # Construct the file path and create the workbook.
-            report_file_name = "{} - {}.xlsx".format(TimeHelper.today(), self.report_title)
+            local_timezone = config['Default'].get('local_timezone') or 'UTC'
+            today = TimeHelper.today(timezone=local_timezone)
+            report_file_name = f"{today} - {self.report_title}.xlsx"
             self.report_file = os.path.join(self.file_path, report_file_name)
             self.workbook_builder = WorkbookBuilder(filename=self.report_file)
         except:
@@ -173,11 +175,11 @@ class DatabaseLogger(Loggable):
     Don't want to log if report not active,
     or if logging is not enabled.
     """
-    def __init__(self, cm, report_name, log_to=[], log_table='report_logs'):
+    def __init__(self, cm, report_name, log_to=None, log_table='report_logs'):
         self.cm = cm
         self.report_name = report_name
         self.log_table = log_table
-        super().__init__(log_to=log_to)
+        super().__init__(log_to=log_to if log_to is not None else [])
 
     def create_record(self):
         """
@@ -193,12 +195,12 @@ class DatabaseLogger(Loggable):
             self.log_error("Unable to create log record.")
         self.report_log = report_log
 
-    def finalize_record(self, errors=None):
+    def finalize_record(self):
         """Update log at conclusion of report execution to indicate success/failure."""
-        if errors:
+        if self.error_log:
             data_to_update = {'completed_at': TimeHelper.now(string=False),
                                 'success': 0,
-                                'error_detail': errors}
+                                'error_detail': "; ".join(self.error_log)}
         else:
             data_to_update = {'completed_at': TimeHelper.now(string=False),
                                 'success': 1}
@@ -210,11 +212,11 @@ class DatabaseLogger(Loggable):
 
 class ReportActiveChecker(Loggable):
 
-    def __init__(self, cm, report_name, log_to=[]):
+    def __init__(self, cm, report_name, log_to=None):
         self.cm = cm
         self.report_name = report_name
         self.active = False
-        super().__init__(log_to=log_to)
+        super().__init__(log_to=log_to if log_to is not None else [])
         self.check_if_active()
 
     def __bool__(self):
@@ -234,19 +236,22 @@ class ReportActiveChecker(Loggable):
             else:
                 self.active = False
         except IndexError:
-            error = "Report {} does not exist".format(self.report_name)
+            error = (
+                f"Report <{self.report_name}> was not found in the {automated_reports.name} table. "
+                f"Ensure <{self.report_name}> matches a record in the table and try again."
+            )
             logger.error(error)
             self.log_error(error)
             raise Exception(error)
 
 
 class RecipientsChecker(Loggable):
-    def __init__(self, cm, report_name, log_to=[]):
+    def __init__(self, cm, report_name, log_to=None):
         self.cm = cm
         self.report_name = report_name
         self.to_recipients = []
         self.cc_recipients = []
-        super().__init__(log_to=log_to)
+        super().__init__(log_to=log_to if log_to is not None else [])
 
     def get_recipients(self):
         """Performs lookup in database for report recipients based on report name."""
