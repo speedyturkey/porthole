@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='porthole',
-      version='0.7.1',
+      version='0.7.3',
       description='An automated reporting package.',
       author='Billy McMonagle',
       author_email='speedyturkey@gmail.com',
@@ -12,6 +12,10 @@ setup(name='porthole',
                         'pymysql',
                         'psycopg2',
                         'xlsxwriter',
-                        'SQLAlchemy'
+                        'SQLAlchemy',
+                        'pytz'
                     ],
+      extras_require={
+        'AWS': ["boto3"]
+      },
       zip_safe=False)

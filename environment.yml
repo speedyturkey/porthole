@@ -5,6 +5,7 @@ dependencies:
   - psycopg2
   - xlsxwriter
   - SQLAlchemy
+  - pytz
   - pip:
     - flask-bootstrap==3.3.7.1
     - Flask-WTF==0.14.2

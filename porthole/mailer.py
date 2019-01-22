@@ -18,11 +18,11 @@ COMMASPACE = ', '
 
 
 class Mailer:
-    def __init__(self, recipients=None, cc_recipients=None, **kwargs):
+    def __init__(self, recipients=None, cc_recipients=None, debug_mode=None, **kwargs):
         self.recipients = recipients or []
         self.cc_recipients = cc_recipients or []
         self.properties = kwargs
-        self.debug_mode = config.getboolean('Debug', 'debug_mode')
+        self.debug_mode = debug_mode or config.getboolean('Debug', 'debug_mode')
         debug_recipients = config['Debug']['debug_recipients']
         self.debug_recipients = [recip.strip() for recip in debug_recipients.split(';')]
         self.username = config['Email']['username']

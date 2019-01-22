@@ -5,6 +5,7 @@ from porthole.components import ReportWriter, ReportActiveChecker, RecipientsChe
 TEST_QUERY = "select count(*) from {}.flarp;"
 default_db = config['Default'].get('database')
 
+
 class TestReportWriter(unittest.TestCase):
     def setUp(self):
         self.cm = ConnectionManager(default_db)
@@ -40,6 +41,7 @@ class TestReportWriter(unittest.TestCase):
         writer.close_workbook()
         self.assertTrue(writer.error_log)
 
+
 class TestReportActiveChecker(unittest.TestCase):
 
     def setUp(self):
@@ -54,6 +56,7 @@ class TestReportActiveChecker(unittest.TestCase):
         inactive_checker = ReportActiveChecker(self.cm, 'test_report_inactive')
         self.assertTrue(active_checker)
         self.assertFalse(inactive_checker)
+
 
 class TestRecipientsChecker(unittest.TestCase):
 

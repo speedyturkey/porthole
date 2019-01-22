@@ -12,11 +12,12 @@ configfile = 'config.ini'
 configpath = os.path.join(configdir, configfile)
 
 Default = OrderedDict([
-    ('project', None),
     ('base_file_path', NONE),
     ('query_path', NONE),
     ('database', NONE),
-    ('notification_recipient', NONE)
+    ('notification_recipient', NONE),
+    ('project', NONE),
+    ('local_timezone', 'UTC'),
 ])
 
 ConnectionName = OrderedDict([(

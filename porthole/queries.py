@@ -59,6 +59,8 @@ class RowDict(OrderedDict):
     def __init__(self, data=None, fields=None, values=None):
         fields_and_values_provided = fields is not None and values is not None
         if fields_and_values_provided is True and data is None:
+            if len(fields) > len(set(fields)):
+                raise ValueError("Field names must be unique, but your result set contains non-unique field names.")
             data = OrderedDict(zip(fields, values))
         else:
             data = data or OrderedDict()
