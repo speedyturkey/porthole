@@ -18,11 +18,14 @@ COMMASPACE = ', '
 
 
 class Mailer:
-    def __init__(self, recipients=None, cc_recipients=None, debug_mode=None, **kwargs):
+    def __init__(self, recipients=None, cc_recipients=None, debug_mode=None, text_format='plain', **kwargs):
         self.recipients = recipients or []
         self.cc_recipients = cc_recipients or []
+        self.subject = None
+        self.message = None
         self.properties = kwargs
         self.debug_mode = debug_mode or config.getboolean('Debug', 'debug_mode')
+        self.text_format = text_format
         debug_recipients = config['Debug']['debug_recipients']
         self.debug_recipients = [recip.strip() for recip in debug_recipients.split(';')]
         self.username = config['Email']['username']
@@ -52,7 +55,11 @@ class Mailer:
         msg = MIMEBase('application', "octet-stream")
 
         # Add the text of the email
-        email_body = MIMEText(self.message, 'plain')
+        if self.text_format.lower() not in ['plain', 'html']:
+            raise ValueError(
+                f"Text format must be either 'plain' or 'html'. Provided value '{self.text_format}' is not allowed."
+            )
+        email_body = MIMEText(self.message, self.text_format)
         outer.attach(email_body)
 
         # Add the attachments

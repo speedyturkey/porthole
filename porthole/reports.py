@@ -276,7 +276,8 @@ class GenericReport(BasicReport, Loggable):
         if self.active:
             if self.check_whether_to_publish():
                 self.publish()
-            self.db_logger.finalize_record()
+            if self.db_logger is not None:
+                self.db_logger.finalize_record()
         if self.error_log:
             self.send_failure_notification()
         self.conns.close_all()
