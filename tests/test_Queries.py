@@ -38,6 +38,12 @@ class TestQueries(unittest.TestCase):
         self.assertTrue(s.raw_sql, s.sql)
         self.assertIsNotNone(s.sql)
 
+    def test_queryreader_filepath(self):
+        """A QueryReader can be instantiated when no parameters are required."""
+        s = QueryReader(filepath='queries/tests', filename='test_query_no_params')
+        self.assertTrue(s.raw_sql, s.sql)
+        self.assertIsNotNone(s.sql)
+
     def test_queryreader_params(self):
         """A QueryReader can be instantiated when all required parameters are provided."""
         s = QueryReader(filename='tests/test_query_with_params', params = {'foo': 'value1', 'b_ar': 'value2', 'Baz': 'value3'})
