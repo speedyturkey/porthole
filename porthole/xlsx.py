@@ -10,11 +10,11 @@ class WorkbookBuilder(object):
 
     DEFAULT_COL_WIDTH = 10
     MAX_COLUMN_WIDTH = 50
+    DEFAULT_HEADER_PARAMS = {'bold': True}
 
     def __init__(self, filename=None):
         self.filename = filename
-        self.header_params = {'bold': True}
-        self.header_format = None
+        self.default_header_format = None
         self.formats = {}
         self.workbook_options = {
             'constant_memory': True,
@@ -26,7 +26,7 @@ class WorkbookBuilder(object):
     def create_workbook(self):
         """Given filename, workbook options, and head format, create workbook."""
         workbook = xlsxwriter.Workbook(self.filename, self.workbook_options)
-        self.header_format = workbook.add_format(self.header_params)
+        self.default_header_format = workbook.add_format(WorkbookBuilder.DEFAULT_HEADER_PARAMS)
         self.workbook = workbook
 
     def close_workbook(self):
@@ -42,7 +42,8 @@ class WorkbookBuilder(object):
     def add_worksheet(
             self, sheet_name, field_names, sheet_data,
             format_axis=None, format_rules=None, row_start=0, col_start=0,
-            autofit_columns=False, column_width=None, freeze_first_row=False
+            autofit_columns=False, column_width=None, freeze_first_row=False,
+            header_format=None, show_autofilter=False
     ):
         """
         :param sheet_name: Worksheet name as string.
@@ -55,6 +56,8 @@ class WorkbookBuilder(object):
         :param autofit_columns: Optional, default value of False. Select whether columns should be "auto-fitted".
         :param column_width: Optional, default of None. Specify a uniform column width.
         :param freeze_first_row: Optional, default False. Freezes first row when scrolling.
+        :param header_format: Optional, default None. Apply specified format name to header row.
+        :param show_autofilter: Optional, default False. Show autofilter on first row.
 
         Add worksheet to the workbook. This method assumes that each inner list (row) has the same number of elements.
         """
@@ -72,7 +75,7 @@ class WorkbookBuilder(object):
                 e_row,
                 e_col + i,
                 field_name,
-                self.header_format
+                self.formats.get(header_format, self.default_header_format)
             )
 
         # Increment row counter for incoming data.
@@ -88,7 +91,9 @@ class WorkbookBuilder(object):
         for i, width in enumerate(col_widths):
             worksheet.set_column(i, i, width)
         if freeze_first_row:
-            worksheet.freeze_panes(1,0)
+            worksheet.freeze_panes(1, 0)
+        if show_autofilter:
+            worksheet.autofilter(0, 0, 0, len(field_names) - 1)
 
     def calculate_column_widths(self, field_names, sheet_data, autofit_columns=False, column_width=None):
         """
