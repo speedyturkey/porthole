@@ -24,7 +24,7 @@ class BasicReport(Loggable):
     :report_title: Used in the filename of the resulting report.
 
     """
-    def __init__(self, report_title, debug_mode=False):
+    def __init__(self, report_title, debug_mode=False, text_format='plain'):
         # -----------------------------------------
         # Assign arguments to instance attributes.
         # -----------------------------------------
@@ -38,6 +38,7 @@ class BasicReport(Loggable):
         self.subject = None
         self.message = None
         self.debug_mode = debug_mode
+        self.text_format = text_format
         self.email_sent = False
         self.failure_notification_sent = False
         self.file_path = config['Default'].get('base_file_path')
@@ -95,7 +96,8 @@ class BasicReport(Loggable):
         email = Mailer(
             recipients=self.to_recipients,
             cc_recipients=self.cc_recipients,
-            debug_mode=self.debug_mode
+            debug_mode=self.debug_mode,
+            text_format=self.text_format
         )
         email.subject = self.subject
         email.message = self.message
@@ -205,11 +207,11 @@ class GenericReport(BasicReport, Loggable):
 
     """
     def __init__(self, report_title, report_name, logging_enabled=True, send_if_blank=True,
-                 publish_to='email', debug_mode=False):
+                 publish_to='email', debug_mode=False, text_format='plain'):
         # -----------------------------------------
         # Assign arguments to instance attributes.
         # -----------------------------------------
-        super().__init__(report_title=report_title, debug_mode=debug_mode)
+        super().__init__(report_title=report_title, debug_mode=debug_mode, text_format=text_format)
         self.report_name = report_name
         self.logging_enabled = logging_enabled
         self.send_if_blank = send_if_blank
