@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='porthole',
-      version='0.7.6',
+      version='0.7.7',
       description='An automated reporting package.',
       author='Billy McMonagle',
       author_email='speedyturkey@gmail.com',
