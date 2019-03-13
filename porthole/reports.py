@@ -1,6 +1,7 @@
 import os
 from inspect import getfullargspec
 from argparse import ArgumentParser
+from .alerts import Alert
 from .app import config
 from .connections import ConnectionPool
 from .mailer import Mailer
@@ -312,7 +313,7 @@ class ReportRunner(ArgumentParser):
         self.add_argument("-r", "--report", dest='report', help="name of report to run")
         self.add_argument("-d", "--debug", action='store_true', dest='debug_mode', help="run the requested report in debug mode, if defined")
         self.add_argument("-p", "--ping", action='store_true', dest='ping', help="this is used for health checking.")
-        self.args = super().parse_args()
+        self.args, _ = super().parse_known_args()
         self.report_map = report_map if report_map is not None else {}
 
     def handle_args(self):
@@ -337,9 +338,18 @@ class ReportRunner(ArgumentParser):
                 logger.info(f"Received call to run {report_name}")
                 report_function()
         else:
+            self.send_unmapped_report_alert()
             error_message = "Report Runner is unable to run: {}. There is no report function mapped to this name".format(report_name)
             logger.error(error_message)
             raise ValueError(error_message)
+
+    def send_unmapped_report_alert(self):
+        alert = Alert(
+            subject=f"Attempt to execute unmapped report <{self.args.report}>",
+            message="Check to ensure report mapping is correct.",
+            recipients=[config['Admin']['admin_email']]
+        )
+        alert.send()
 
 
 if __name__ == '__main__':
