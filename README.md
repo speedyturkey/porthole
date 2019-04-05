@@ -19,13 +19,15 @@ These instructions will allow you to install and configure your environment. You
 
 #### Prerequisites
 
-You must have first installed Python 3.5 or higher. It is recommended but not required to use an environment/package manager such as Anaconda. For more information, see the "Install Conda" section below. At the very least, if you are using a Mac, please do NOT use the "system" Python.
+You must have first installed Python 3.6 or higher. It is recommended but not required to use an environment/package manager such as Anaconda. For more information, see the "Install Conda" section below. At the very least, if you are using a Mac, please do NOT use the "system" Python.
 
-You must also have access to a compatible database (at time of writing, this includes MySQL, PostgreSQL and SQLite) and have CRUD privileges. See "Step 3 - Create database tables" below for more information.
+You must also have access to a compatible database. This includes MySQL, PostgreSQL, Microsoft SQL Server, and SQLite). In order to take full advantage of Porthole's functionality, you will need to have CRUD privileges. See "Step 3 - Create database tables" below for more information.
+
+Porthole is designed primarily for Linux and Mac. If you are using Windows, it is recommended that you enable and use Windows Subsystem for Linux (WSL).
 
 ### Step 1 - Install Porthole
 
-Use pip to install Porthole from your command prompt or terminal window:
+Use pip to install Porthole from your command prompt or terminal:
 
 `pip install porthole`
 
@@ -56,9 +58,9 @@ Required values:
 Since any database connection requires several parameters, database configs are defined as their own sections. The parameters required in a given section depend on which RDBMS is being defined. The full list of parameters is as follows:
 
 * Section header - e.g. [Production] - This is a descriptive label which will identify a given connection.
-* rdbms - The type of RDBMS. Currently supported options include mysql, postgresql, and sqlite.
+* rdbms - The type of RDBMS. Currently supported options include mysql, postgresql, mssql, and sqlite.
 * host - The connection string or endpoint. For sqlite, this is the database file name.
-* port - Usually defaults to 3306 for mysql. Not used for sqlite but set to 0 by default.
+* port - Usually defaults to 3306 for mysql and 5432 for postgresql. Not used for sqlite but set to 0 by default.
 * user - The account name for the database user.
 * password - The user's password.
 * database - This is for postgresql only. The name of the database to connect to (e.g. `public`).
@@ -111,11 +113,13 @@ from porthole import GenericReport
 
 report = GenericReport(report_name='sample_report', report_title='Sample Report')
 report.build_file()
-report.create_worksheet_from_query( query={'filename': 'sample_query'},
-                                    sheet_name='Sheet1'
-                                )
+report.create_worksheet_from_query(
+    query={'filename': 'sample_query'},
+    sheet_name='Sheet1'
+)
 report.subject = 'Sample Report'
 report.message = 'Please see attached for the Sample Report.'
+report.get_recipients()
 report.execute()
 
 ```
@@ -175,3 +179,5 @@ Execute the command `python run_tests.py`.
 ## Authors
 
 * **Billy McMonagle** - *Initial work* - [GitHub](https://github.com/speedyturkey)
+* **Ed Nunes ** - *Contributor* - [GitHub](https://github.com/nunie123)
+* **Chase Hudson ** - *Contributor* - [GitHub](https://github.com/Chase-H)
