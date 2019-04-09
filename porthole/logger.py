@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import TimedRotatingFileHandler
 from .app import config
 
 
@@ -15,29 +16,50 @@ class PortholeLogger(object):
     DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, name, logfile=None, fmt=DEFAULT_FORMAT, datefmt=DEFAULT_DATE_FORMAT):
-        # Get config values
-        try:
-            log_to_file = config['Logging'].getboolean('log_to_file')
-            default_logfile = config['Logging'].get('logfile')
-        except KeyError:
-            log_to_file = False
-            default_logfile = None
+        self.log_format = fmt
+        self.date_format = datefmt
+        self.formatter = None
+        log_to_file = config['Logging'].getboolean('log_to_file', False)
+        self.logfile = logfile or config['Logging'].get('logfile', None)
+        self.rotate_logs = config['Logging'].getboolean('rotate_logs', False)
 
-        # Create Logger, Formatter, and StreamHandler
-        logger = logging.getLogger(name)
-        logger.setLevel(logging.INFO)
-        formatter = logging.Formatter(fmt=fmt,
-                                      datefmt=datefmt)
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.INFO)
+        self.create_formatter()
+        self.add_stream_handler()
         if log_to_file:
-            logfile = logfile or default_logfile
-            file_handler = logging.FileHandler(logfile)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-        self.logger = logger
-        self.logger.level = logging.INFO
+            self.add_file_handler()
+
+    def create_formatter(self):
+        self.formatter = logging.Formatter(
+            fmt=self.log_format,
+            datefmt=self.date_format
+        )
+
+    def add_stream_handler(self):
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(self.formatter)
+        self.logger.addHandler(stream_handler)
+
+    def add_file_handler(self):
+        if self.rotate_logs:
+            self.add_rotating_file_handler()
+        else:
+            handler = logging.FileHandler(self.logfile)
+            handler.setFormatter(self.formatter)
+            self.logger.addHandler(handler)
+
+    def add_rotating_file_handler(self):
+        interval_type = config['Logging.get'].get('rotation_interval_type', 'h')
+        interval_magnitude = config['Logging'].get('rotation_interval_magnitude', 1)
+        backup_count = config['Logging'].get('backup_count', 0)
+        handler = TimedRotatingFileHandler(
+            filename=self.logfile,
+            when=interval_type,
+            interval=interval_magnitude,
+            backupCount=backup_count
+        )
+        self.logger.addHandler(handler)
 
     def debug(self, msg, *args, **kwargs):
         self.logger.debug(msg, *args, **kwargs)
