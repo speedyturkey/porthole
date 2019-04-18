@@ -1,5 +1,6 @@
 import sqlalchemy as sa
-from porthole import ConnectionManager, PortholeLogger
+from porthole import ConnectionManager
+from .logger import PortholeLogger
 from porthole.models import automated_reports, automated_report_contacts, automated_report_recipients
 
 logger = PortholeLogger(name=__name__)
