@@ -1,13 +1,20 @@
-import pymysql
 from sqlalchemy import create_engine
 from .app import config
 from .logger import PortholeLogger
 
 logger = PortholeLogger(name=__name__)
 
-class ConnectionManager():
+
+class ConnectionManager:
     def __init__(self, db=None):
         self.db = db
+        self.db_host = None
+        self.db_port = None
+        self.db_user = None
+        self.db_password = None
+        self.database = None
+        self.schema = None
+        self.driver = None
         self.config = config
         self.engine = None
         self.conn = None
