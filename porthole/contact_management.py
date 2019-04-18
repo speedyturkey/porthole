@@ -1,20 +1,8 @@
-"""
-1. Add report by name
-    - first check that report does not exist.
-2. Add contact by email + name
-3. Add recipient by report name, email, and recipient type
-    - create report if report does not exist
-    - create contact if contact does not exist
-4. Activate report
-5. Deactivate report
-6. Remove recipient from report
-    - Check that recipient exists.
-
-"""
-import os
 import sqlalchemy as sa
-from porthole import ConnectionManager
-from porthole.models import metadata, automated_reports, automated_report_contacts, automated_report_recipients
+from porthole import ConnectionManager, PortholeLogger
+from porthole.models import automated_reports, automated_report_contacts, automated_report_recipients
+
+logger = PortholeLogger(name=__name__)
 
 
 class AutomatedReportContactManager(object):
@@ -33,18 +21,25 @@ class AutomatedReportContactManager(object):
     def create_record(self, table: sa.Table, data: dict):
         self.execute_statement(table.insert().values(**data))
 
-    def update_record(self, table: sa.Table, conditions, data: dict):
-        # TODO this needs a "where"
-        # consider using "expressions" similar to record exists...
-        # maybe pull that out into a separate method?
-        self.execute_statement(table.update().values(**data))
+    def update_record(self, table: sa.Table, conditions: dict, data: dict):
+        expression = self.compile_binary_expression(table, conditions)
+        self.execute_statement(table.update().where(expression).values(**data))
 
-    def record_exists(self, table: sa.Table, field_value_dict):
+    def delete_record(self, table: sa.Table, conditions: dict):
+        expression = self.compile_binary_expression(table, conditions)
+        self.execute_statement(table.delete().where(expression))
+
+    @staticmethod
+    def compile_binary_expression(table: sa.Table, field_value_dict: dict):
         expressions = [
             getattr(table.c, field) == value for field, value in field_value_dict.items()
         ]
+        return sa.and_(*expressions)
+
+    def record_exists(self, table: sa.Table, field_value_dict):
+        expression = self.compile_binary_expression(table, field_value_dict)
         select = sa.sql.select([
-            sa.exists().where(sa.and_(*expressions))
+            sa.exists().where(expression)
         ])
         try:
             return self.execute_statement(select)[0][0]
@@ -67,7 +62,8 @@ class AutomatedReportContactManager(object):
 
     def add_report(self, report_name: str, active: int = 1):
         if self.report_exists(report_name):
-            return
+            logger.warning(f"{report_name} already exists")
+            return None
         self.create_record(
             table=automated_reports,
             data={
@@ -75,22 +71,32 @@ class AutomatedReportContactManager(object):
                 'active': active
             }
         )
-
-    def activate_report(self, report_name):
-        pass
-
-    def deactivate_report(self, report_name):
-        pass
+        logger.info(f"Report '{report_name}' created successfully")
 
     def report_is_active(self, report_name):
-        pass
+        return self.record_exists(automated_reports, {'report_name': report_name, 'active': 1})
+
+    def activate_report(self, report_name):
+        if self.report_is_active(report_name):
+            logger.warning(f"Report '{report_name}' is already active")
+            return None
+        self.update_record(automated_reports, {'report_name': report_name}, {'active': 1})
+        logger.info(f"Report '{report_name}' is now active")
+
+    def deactivate_report(self, report_name):
+        if not self.report_is_active(report_name):
+            logger.warning(f"Report '{report_name}' is already inactive")
+            return None
+        self.update_record(automated_reports, {'report_name': report_name}, {'active': 0})
+        logger.info(f"Report '{report_name}' is now inactive")
 
     def contact_exists(self, email_address: str):
         return self.record_exists(automated_report_contacts, {'email_address': email_address})
 
     def add_contact(self, last_name: str = None, first_name: str = None, email_address: str = None):
         if self.contact_exists(email_address):
-            return
+            logger.warning(f"Contact {last_name}, {first_name} ({email_address}) already exists ")
+            return None
         self.create_record(
             table=automated_report_contacts,
             data={
@@ -99,6 +105,7 @@ class AutomatedReportContactManager(object):
                 'email_address': email_address
             }
         )
+        logger.info(f"Contact {last_name}, {first_name} ({email_address}) created successfully")
 
     def report_recipient_exists(self, report_name: str, email_address: str):
         return self.record_exists(
@@ -113,6 +120,7 @@ class AutomatedReportContactManager(object):
         if recipient_type not in ['to', 'cc']:
             raise ValueError("Recipient type must be either `to` or `cc`.")
         if self.report_recipient_exists(report_name, email_address):
+            logger.warning(f"Recipient '{email_address}' already exists for report '{report_name}'")
             return None
         self.create_record(
             table=automated_report_recipients,
@@ -122,25 +130,17 @@ class AutomatedReportContactManager(object):
                 'recipient_type': recipient_type
             }
         )
+        logger.info(f"{recipient_type} recipient '{email_address}' added successfully to report '{report_name}'")
 
-
-def setup_test_db():
-    with ConnectionManager("Test") as cm:
-        metadata.create_all(cm.engine)
-        cm.commit()
-
-
-def teardown_test_db():
-    try:
-        os.unlink('test.db')
-    except FileNotFoundError:
-        pass
-
-
-def test():
-    manager = AutomatedReportContactManager("Test")
-    manager.add_report("baz", 1)
-    manager.add_contact("McMonagle", "William", "william.mcmonagle@ankura.com")
-    manager.add_contact(email_address="speedyturkey@gmail.com")
-    manager.add_report_recipient("baz", "speedyturkey@gmail.com", "to")
-    manager.add_report_recipient("baz", "william.mcmonagle@ankura.com", "cc")
+    def remove_report_recipient(self, report_name: str, email_address: str):
+        if not self.report_recipient_exists(report_name, email_address):
+            logger.warning(f"Recipient '{email_address}' does not exist for report '{report_name}'")
+            return None
+        self.delete_record(
+            table=automated_report_recipients,
+            conditions={
+                'report_id': self.get_record_id(automated_reports, 'report_name', report_name),
+                'contact_id': self.get_record_id(automated_report_contacts, 'email_address', email_address),
+            }
+        )
+        logger.info(f"Recipient '{email_address}' removed successfully from report '{report_name}'")

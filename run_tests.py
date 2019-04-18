@@ -3,6 +3,7 @@ import unittest
 from porthole import config, ConnectionManager
 from porthole.models import metadata
 from tests.fixtures import test_metadata, create_fixtures
+from tests.test_AutomatedReportContactManager import TestAutomatedReportContactManager
 from tests.test_ConnectionManager import TestConnectionManager
 from tests.test_Mailer import TestMailer
 from tests.test_SimpleWorkflow import TestSimpleWorkflow
@@ -48,20 +49,21 @@ def main():
 
     # Select all of your test classes here.
     test_classes_to_run = [
-                            TestConnectionManager,
-                            TestSimpleWorkflow,
-                            TestRelatedRecord,
-                            TestBasicReport,
-                            TestGenericReport,
-                            TestMailer,
-                            TestReportRunner,
-                            TestQueries,
-                            TestRowDict,
-                            TestReportWriter,
-                            TestReportActiveChecker,
-                            TestResultFilter,
-                            TestWorkbookBuilder
-                            ]
+        TestAutomatedReportContactManager,
+        TestConnectionManager,
+        TestSimpleWorkflow,
+        TestRelatedRecord,
+        TestBasicReport,
+        TestGenericReport,
+        TestMailer,
+        TestReportRunner,
+        TestQueries,
+        TestRowDict,
+        TestReportWriter,
+        TestReportActiveChecker,
+        TestResultFilter,
+        TestWorkbookBuilder
+    ]
 
     # Setup
     loader = unittest.TestLoader()
