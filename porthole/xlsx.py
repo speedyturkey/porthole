@@ -1,5 +1,6 @@
 import datetime
 import xlsxwriter
+import openpyxl
 
 
 class WorkbookBuilder(object):
@@ -126,6 +127,24 @@ class WorkbookBuilder(object):
                 col_widths[i] = WorkbookBuilder.MAX_COLUMN_WIDTH
 
         return col_widths
+
+
+class WorkbookEditor(object):
+    def __init__(self, workbook_filename):
+        self.workbook_filename = workbook_filename
+        self.workbook = openpyxl.load_workbook(filename=workbook_filename)
+
+    def replace_sheet_contents(self, sheet_name: str, data_rows: list) -> None:
+        del self.workbook[sheet_name]
+        worksheet = self.workbook.create_sheet(sheet_name)
+        for row in data_rows:
+            worksheet.append(row)
+    
+    def save_workbook(self, save_as: str='') -> None:
+        try:
+            self.workbook.save(save_as)
+        except FileNotFoundError:
+            self.workbook.save(self.workbook_filename)
 
 
 def apply_column_rule(row, rule):
