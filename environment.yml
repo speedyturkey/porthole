@@ -4,7 +4,8 @@ dependencies:
   - pymysql
   - psycopg2
   - xlsxwriter
-  - openpyxl=2.6.2
+  - openpyxl=2.6.2  #this library allows for editing of existing Excel files
+  - lxml            #this library speeds up openpyxl
   - SQLAlchemy
   - pytz
 
