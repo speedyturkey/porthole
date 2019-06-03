@@ -10,7 +10,7 @@ setup(name='porthole',
       python_requires='>3.6',
       install_requires=[
                         'pymysql',
-                        'psycopg2',
+                        'psycopg2-binary',
                         'xlsxwriter',
                         'SQLAlchemy',
                         'pytz'
