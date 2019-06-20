@@ -139,12 +139,17 @@ class WorkbookEditor(object):
         worksheet = self.workbook.create_sheet(sheet_name)
         for row in data_rows:
             worksheet.append(row)
+
+    def get_all_values(self, sheet_name: str) -> list:
+        rows = []
+        for row in self.workbook[sheet_name].values:
+            rows.append(row)
+        return rows
     
-    def save_workbook(self, save_as: str='') -> None:
-        try:
-            self.workbook.save(save_as)
-        except FileNotFoundError:
-            self.workbook.save(self.workbook_filename)
+    def save_workbook(self, save_as: str=None) -> None:
+        if save_as is None:
+            save_as=self.workbook_filename
+        self.workbook.save(save_as)
 
 
 def apply_column_rule(row, rule):
