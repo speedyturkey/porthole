@@ -30,7 +30,7 @@ class TestReportWriter(unittest.TestCase):
         writer.create_worksheet_from_query(self.cm, "sheet1", sql=test_query)
         writer.close_workbook()
         self.assertTrue(writer.record_count > 0)
-        self.assertFalse(writer.error_log)
+        self.assertTrue(writer.logger.error_buffer.empty)
 
     def test_invalid_sheet_name_raises_error(self):
         "Should log an error if attempt to add worksheet with invalid name"
@@ -39,7 +39,7 @@ class TestReportWriter(unittest.TestCase):
         test_query = TEST_QUERY.format(self.cm.schema)
         writer.create_worksheet_from_query(self.cm, "sheet/1", sql=test_query)
         writer.close_workbook()
-        self.assertTrue(writer.error_log)
+        self.assertFalse(writer.logger.error_buffer.empty)
 
 
 class TestReportActiveChecker(unittest.TestCase):

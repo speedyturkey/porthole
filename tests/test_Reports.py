@@ -129,7 +129,7 @@ class TestGenericReport(unittest.TestCase):
         report.build_file()
         report.create_worksheet_from_query(query={'filename': 'does_not_exist'},
                                             sheet_name='Sheet1')
-        self.assertFalse(report.error_log == [])
+        self.assertFalse(report.logger.error_buffer.empty)
         report.db_logger.finalize_record()
 
     def test_send_failure_notification_on_error(self):
@@ -142,7 +142,7 @@ class TestGenericReport(unittest.TestCase):
         report.build_file()
         report.create_worksheet_from_query(sheet_name='Sheet1',
                                             sql=TEST_QUERY)
-        report.error_log.append("Forced error")
+        report.logger.error("Forced error")
         report.subject = "test_send_failure_notification_on_error"
         report.message = "test_send_failure_notification_on_error"
         report.execute()
@@ -179,7 +179,7 @@ class TestReportRunner(unittest.TestCase):
 
 
 
-TEST_QUERY = "select count(*) from flarp;"
+TEST_QUERY = "select count(*) from sys.flarp;"
 
 
 def run():
