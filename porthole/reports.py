@@ -6,7 +6,6 @@ from .app import config
 from .connections import ConnectionPool
 from .mailer import Mailer
 from .components import (DatabaseLogger,
-                         Loggable,
                          RecipientsChecker,
                          ReportActiveChecker,
                          ReportErrorNotifier,
@@ -14,10 +13,8 @@ from .components import (DatabaseLogger,
 from .logger import PortholeLogger
 from .uploaders import S3Uploader
 
-logger = PortholeLogger(name=__name__)
 
-
-class BasicReport(Loggable):
+class BasicReport:
     """
     A basic report with bare minimum functionality.
 
@@ -25,19 +22,22 @@ class BasicReport(Loggable):
     :report_title: Used in the filename of the resulting report.
 
     """
-    def __init__(self, report_title, debug_mode=False, text_format='plain'):
+    def __init__(self, report_title, debug_mode=False, text_format='plain', logger_name=None, log_to_db=False):
         # -----------------------------------------
         # Assign arguments to instance attributes.
         # -----------------------------------------
         self.report_title = report_title
-        self.attachments = []
         self.report_writer = None
-        self.error_log = []
+        self.logger = PortholeLogger(
+            name=logger_name or report_title,
+            log_to_db=log_to_db
+        )
         self.to_recipients = []
         self.cc_recipients = []
         self.email = None
         self.subject = None
         self.message = None
+        self.attachments = []
         self.debug_mode = debug_mode
         self.text_format = text_format
         self.email_sent = False
@@ -59,7 +59,7 @@ class BasicReport(Loggable):
         return self.conns.add_connection(db)
 
     def build_file(self):
-        report_writer = ReportWriter(report_title=self.report_title, log_to=self.error_log)
+        report_writer = ReportWriter(report_title=self.report_title, logger=self.logger)
         report_writer.build_file()
         self.attachments.append(report_writer.report_file)
         self.report_writer = report_writer
@@ -111,15 +111,14 @@ class BasicReport(Loggable):
             self.email.send_email()
             self.email_sent = True
         except Exception as e:
-            logger.exception(e)
-            self.log_error("Unable to send email")
+            self.logger.exception(e)
 
     def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors and settings."""
-        if self.error_log:
-            return False
-        else:
+        if self.logger.error_buffer.empty:
             return True
+        else:
+            return False
 
     def build_and_send_email(self):
         """If email should be sent, builds email object and sends email."""
@@ -137,21 +136,21 @@ class BasicReport(Loggable):
         if self.report_writer:
             self.report_writer.close_workbook()
         self.build_and_send_email()
-        if self.error_log:
+        if not self.logger.error_buffer.empty:
             self.send_failure_notification()
         self.conns.close_all()
 
     def send_failure_notification(self):
         notifier = ReportErrorNotifier(
             report_title=self.report_title,
-            error_log=self.error_log
+            error_buffer=self.logger.error_buffer.buffer
         )
         notifier.send_log_by_email()
         if notifier.notified:
             self.failure_notification_sent = True
 
 
-class GenericReport(BasicReport, Loggable):
+class GenericReport(BasicReport):
     """A generic report object to be used to facilitate
     easy setup and configuration of new automated reports.
 
@@ -207,12 +206,28 @@ class GenericReport(BasicReport, Loggable):
         automated_report_contacts table, add them to it.
 
     """
-    def __init__(self, report_title, report_name, logging_enabled=True, send_if_blank=True,
-                 publish_to='email', debug_mode=False, text_format='plain'):
+    def __init__(
+            self,
+            report_title,
+            report_name,
+            logging_enabled=True,
+            log_to_db=True,
+            logger_name=None,
+            send_if_blank=True,
+            publish_to='email',
+            debug_mode=False,
+            text_format='plain'
+    ):
         # -----------------------------------------
         # Assign arguments to instance attributes.
         # -----------------------------------------
-        super().__init__(report_title=report_title, debug_mode=debug_mode, text_format=text_format)
+        super().__init__(
+            report_title=report_title,
+            debug_mode=debug_mode,
+            text_format=text_format,
+            logger_name=logger_name or report_name,
+            log_to_db=log_to_db
+        )
         self.report_name = report_name
         self.logging_enabled = logging_enabled
         self.send_if_blank = send_if_blank
@@ -237,7 +252,7 @@ class GenericReport(BasicReport, Loggable):
         self.db_logger = DatabaseLogger(
             cm=self.get_conn(self.default_db),
             report_name=self.report_name,
-            log_to=self.error_log
+            logger=self.logger
         )
         self.db_logger.create_record()
 
@@ -245,7 +260,7 @@ class GenericReport(BasicReport, Loggable):
         self.active = ReportActiveChecker(
             cm=self.get_conn(self.default_db),
             report_name=self.report_name,
-            log_to=self.error_log
+            logger=self.logger
         )
 
     def get_recipients(self):
@@ -254,13 +269,13 @@ class GenericReport(BasicReport, Loggable):
         checker = RecipientsChecker(
             cm=self.get_conn(self.default_db),
             report_name=self.report_name,
-            log_to=self.error_log
+            logger=self.logger
         )
         self.to_recipients, self.cc_recipients = checker.get_recipients()
 
     def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors, settings, and result count."""
-        if self.error_log:
+        if not self.logger.error_buffer.empty:
             return False
         elif not self.send_if_blank and self.record_count == 0:
             return False
@@ -281,7 +296,7 @@ class GenericReport(BasicReport, Loggable):
                 self.publish()
             if self.db_logger is not None:
                 self.db_logger.finalize_record()
-        if self.error_log:
+        if not self.logger.error_buffer.empty:
             self.send_failure_notification()
         self.conns.close_all()
 
@@ -303,7 +318,7 @@ class GenericReport(BasicReport, Loggable):
                 uploaded.append(success)
             self.uploaded_to_s3 = all(uploaded)
         except:
-            self.log_error_detail("Unable to upload to S3")
+            self.logger.exception("Unable to upload to S3")
 
 
 class ReportRunner(ArgumentParser):
@@ -315,6 +330,7 @@ class ReportRunner(ArgumentParser):
         self.add_argument("-p", "--ping", action='store_true', dest='ping', help="this is used for health checking.")
         self.args, _ = super().parse_known_args()
         self.report_map = report_map if report_map is not None else {}
+        self.logger = PortholeLogger("report_runner", log_to_db=True)
 
     def handle_args(self):
         if self.args.list:
@@ -332,15 +348,15 @@ class ReportRunner(ArgumentParser):
         report_function = self.report_map.get(report_name)
         if report_function:
             if 'debug_mode' in getfullargspec(report_function).args:
-                logger.info(f"Received call to run {report_name} in debug mode.")
+                self.logger.info(f"Received call to run {report_name} in debug mode.")
                 report_function(debug_mode=self.args.debug)
             else:
-                logger.info(f"Received call to run {report_name}")
+                self.logger.info(f"Received call to run {report_name}")
                 report_function()
         else:
             self.send_unmapped_report_alert()
             error_message = "Report Runner is unable to run: {}. There is no report function mapped to this name".format(report_name)
-            logger.error(error_message)
+            self.logger.error(error_message)
             raise ValueError(error_message)
 
     def send_unmapped_report_alert(self):
