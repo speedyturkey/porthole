@@ -8,12 +8,6 @@ Test email is not sent on failure.
 from types import MethodType
 import unittest
 from porthole import config, BasicReport, GenericReport, ReportRunner
-import pickle
-
-
-def pickle_object(obj, filename):
-    with open(filename, 'wb') as output:
-        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
 def mocked_send_email(self):

@@ -32,21 +32,25 @@ class PortholeLogger(object):
         self.log_format = fmt
         self.date_format = datefmt
         self.formatter = None
-        log_to_file = config['Logging'].getboolean('log_to_file', False)
+        self.error_buffer = None
+        self.log_to_file = config['Logging'].getboolean('log_to_file', False)
         self.logfile = logfile or config['Logging'].get('logfile', None)
+        self.log_to_db = log_to_db
         self.log_table = log_table
-
         self.rotate_logs = config['Logging'].getboolean('rotate_logs', False)
 
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.INFO)
         self.create_formatter()
+        self.setup_handlers()
+
+    def setup_handlers(self):
         self.add_stream_handler()
         self.error_buffer = ErrorBuffer()
         self.logger.addHandler(self.error_buffer)
-        if log_to_file:
+        if self.log_to_file:
             self.add_file_handler()
-        if log_to_db:
+        if self.log_to_db:
             self.add_db_handler()
 
     def create_formatter(self):
@@ -55,26 +59,34 @@ class PortholeLogger(object):
             datefmt=self.date_format
         )
 
+    def _add_handler(self, handler):
+        """Ensure handlers are unique by name"""
+        handlers = [h.name for h in self.logger.handlers if h.name]
+        if handler.name not in handlers:
+            self.logger.addHandler(handler)
+
     def add_stream_handler(self):
         stream_handler = logging.StreamHandler()
+        stream_handler.set_name(name="stream_handler")
         stream_handler.setFormatter(self.formatter)
-        self.logger.addHandler(stream_handler)
+        self._add_handler(stream_handler)
 
     def add_file_handler(self):
         if self.rotate_logs:
             self.add_rotating_file_handler()
         else:
             handler = logging.FileHandler(self.logfile)
+            handler.set_name(name="file_handler")
             handler.setFormatter(self.formatter)
-            self.logger.addHandler(handler)
+            self._add_handler(handler)
 
     def add_db_handler(self):
         log_db = config['Logging'].get('logging_db')
         if not log_db:
             self.warning("log_to_db is set to true, but logging_db is not set. Will not log to database.")
             return
-        handler = DBHandler(database=log_db, table=self.log_table)
-        self.logger.addHandler(handler)
+        handler = DatabaseHandler(logger=self, database=log_db, table=self.log_table)
+        self._add_handler(handler)
 
     def add_rotating_file_handler(self):
         interval_type = config['Logging.get'].get('rotation_interval_type', 'h')
@@ -86,7 +98,8 @@ class PortholeLogger(object):
             interval=interval_magnitude,
             backupCount=backup_count
         )
-        self.logger.addHandler(handler)
+        handler.set_name(name="rotating_file_handler")
+        self._add_handler(handler)
 
     def debug(self, msg, *args, **kwargs):
         self.logger.debug(msg, *args, **kwargs)
@@ -110,12 +123,16 @@ class PortholeLogger(object):
         self.logger.setLevel(level)
 
 
-class DBHandler(logging.Handler):
-    def __init__(self, database=None, table: sa.Table = None):
+class DatabaseHandler(logging.Handler):
+    def __init__(self, logger, database=None, table: sa.Table = None):
+        from .connections import ConnectionManager
         logging.Handler.__init__(self)
+        self.set_name(name="database_handler")
         self.database = database
         self.table = table
-
+        self.cm = ConnectionManager(self.database, logger=logger)
+        self.cm.connect()
+        
     def emit(self, record):
         if record.exc_info:
             trace = traceback.format_exc()
@@ -131,11 +148,10 @@ class DBHandler(logging.Handler):
         self._log_record_to_db(data)
 
     def _log_record_to_db(self, log_data: dict):
-        from .connections import ConnectionManager
+
         statement = self.table.insert().values(**log_data)
         try:
-            with ConnectionManager(self.database) as cm:
-                cm.conn.execute(statement)
+            self.cm.conn.execute(statement)
         except Exception as e:
             warnings.warn(f"Exception when writing log to database: {e}")
 
@@ -144,7 +160,12 @@ class ErrorBuffer(logging.handlers.BufferingHandler):
     def __init__(self, capacity: int = 1024):
         super().__init__(capacity=capacity)
         self.setLevel(logging.ERROR)
+        self.set_name(name="error_buffer")
 
     @property
     def empty(self):
         return len(self.buffer) == 0
+
+    @property
+    def present(self):
+        return not self.empty

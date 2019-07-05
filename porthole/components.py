@@ -1,4 +1,4 @@
-import os, sys
+import os
 from sqlalchemy import select
 from . import TimeHelper
 from .app import config
@@ -78,7 +78,7 @@ class ReportWriter:
             query = {}
         filename = query.get('filename')
         params = query.get('params')
-        q = QueryGenerator(cm=cm, filename=filename, params=params, sql=sql)
+        q = QueryGenerator(cm=cm, filename=filename, params=params, sql=sql, logger=self.logger)
         try:
             results = q.execute()
             if increment_counter:
@@ -164,7 +164,7 @@ class DatabaseLogger:
             data_to_update = {
                 'completed_at': TimeHelper.now(string=False),
                 'success': 0,
-                'error_detail': "; ".join([str(err) for err in error_buffer])
+                'error_detail': "; ".join([str(err) for err in error_buffer])[:255]
             }
         else:
             data_to_update = {
@@ -217,7 +217,7 @@ class ReportActiveChecker:
             automated_reports.c.report_name == self.report_name
             )
         try:
-            q = QueryGenerator(cm=self.cm, sql=statement)
+            q = QueryGenerator(cm=self.cm, sql=statement, logger=self.logger)
             results = q.execute()
             if results.result_data[0]['active'] == 1:
                 self.active = True
@@ -249,7 +249,7 @@ class RecipientsChecker:
                         .join(automated_report_contacts))\
                         .where(automated_reports.c.report_name==self.report_name)
         try:
-            q = QueryGenerator(cm=self.cm, sql=statement)
+            q = QueryGenerator(cm=self.cm, sql=statement, logger=self.logger)
             results = q.execute()
             for recipient in results.row_proxies:
                 if recipient.recipient_type == 'to':

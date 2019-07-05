@@ -59,20 +59,20 @@ def main():
 
     # Select all of your test classes here.
     test_classes_to_run = [
-        TestAutomatedReportContactManager,
-        TestConnectionManager,
-        TestSimpleWorkflow,
-        TestRelatedRecord,
-        TestBasicReport,
+        # TestAutomatedReportContactManager,
+        # TestConnectionManager,
+        # TestSimpleWorkflow,
+        # TestRelatedRecord,
+        # TestBasicReport,
         TestGenericReport,
-        TestMailer,
-        TestReportRunner,
-        TestQueries,
-        TestRowDict,
-        TestReportWriter,
-        TestReportActiveChecker,
-        TestResultFilter,
-        TestWorkbookBuilder
+        # TestMailer,
+        # TestReportRunner,
+        # TestQueries,
+        # TestRowDict,
+        # TestReportWriter,
+        # TestReportActiveChecker,
+        # TestResultFilter,
+        # TestWorkbookBuilder
     ]
 
     # Setup

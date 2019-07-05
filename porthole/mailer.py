@@ -12,13 +12,20 @@ from email.mime.text import MIMEText
 from .app import config
 from .logger import PortholeLogger
 
-logger = PortholeLogger(name=__name__)
-
 COMMASPACE = ', '
 
 
 class Mailer:
-    def __init__(self, recipients=None, cc_recipients=None, debug_mode=None, text_format='plain', **kwargs):
+    def __init__(
+            self,
+            recipients=None,
+            cc_recipients=None,
+            debug_mode=None,
+            text_format='plain',
+            logger=None,
+            **kwargs
+    ):
+        self.logger = logger or PortholeLogger(name=__name__)
         self.recipients = recipients or []
         self.cc_recipients = cc_recipients or []
         self.bcc_recipients = []
@@ -40,7 +47,7 @@ class Mailer:
 
     def send_email(self):
         if config['Email']['disabled'] == 'True':
-            logger.info("Email disabled - exiting mailer.")
+            self.logger.info("Email disabled - exiting mailer.")
             exit()
 
         # Create the enclosing (outer) message
@@ -76,13 +83,13 @@ class Mailer:
                     )
                     outer.attach(msg)
                 except Exception as e:
-                    logger.exception(e)
+                    self.logger.exception(e)
                     raise
 
         composed = outer.as_string()
 
         if self.debug_mode:
-            logger.info(f"""Debug mode active. Sending only to designated debug recipient(s).
+            self.logger.info(f"""Debug mode active. Sending only to designated debug recipient(s).
 
 Active report would have been sent to:
             "To" Recipients: {self.recipients}
@@ -105,9 +112,9 @@ Active report would have been sent to:
                            composed)
                 self.all_sent_to_recipients = all_recipients
                 s.close()
-                logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
+                self.logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             raise
 
 

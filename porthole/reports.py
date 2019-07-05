@@ -1,7 +1,7 @@
 import os
 from inspect import getfullargspec
 from argparse import ArgumentParser
-from .alerts import Alert
+# from .alerts import Alert
 from .app import config
 from .connections import ConnectionPool
 from .mailer import Mailer
@@ -44,13 +44,17 @@ class BasicReport:
         self.failure_notification_sent = False
         self.file_path = config['Default'].get('base_file_path')
         self.default_db = config['Default'].get('database')
-        self.conns = ConnectionPool([self.default_db])
+        self.conns = ConnectionPool(dbs=[self.default_db], logger=self.logger)
 
     def __del__(self):
         try:
             self.conns.close_all()
         except:
             pass
+
+    @property
+    def has_errors(self):
+        return self.logger.error_buffer.present
 
     def get_conn(self, db):
         return self.conns.pool.get(db)
@@ -98,7 +102,8 @@ class BasicReport:
             recipients=self.to_recipients,
             cc_recipients=self.cc_recipients,
             debug_mode=self.debug_mode,
-            text_format=self.text_format
+            text_format=self.text_format,
+            logger=self.logger
         )
         email.subject = self.subject
         email.message = self.message
@@ -115,10 +120,10 @@ class BasicReport:
 
     def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors and settings."""
-        if self.logger.error_buffer.empty:
-            return True
-        else:
+        if self.has_errors:
             return False
+        else:
+            return True
 
     def build_and_send_email(self):
         """If email should be sent, builds email object and sends email."""
@@ -136,7 +141,7 @@ class BasicReport:
         if self.report_writer:
             self.report_writer.close_workbook()
         self.build_and_send_email()
-        if not self.logger.error_buffer.empty:
+        if self.has_errors:
             self.send_failure_notification()
         self.conns.close_all()
 
@@ -275,7 +280,7 @@ class GenericReport(BasicReport):
 
     def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors, settings, and result count."""
-        if not self.logger.error_buffer.empty:
+        if self.has_errors:
             return False
         elif not self.send_if_blank and self.record_count == 0:
             return False
@@ -296,7 +301,7 @@ class GenericReport(BasicReport):
                 self.publish()
             if self.db_logger is not None:
                 self.db_logger.finalize_record()
-        if not self.logger.error_buffer.empty:
+        if self.has_errors:
             self.send_failure_notification()
         self.conns.close_all()
 

@@ -6,8 +6,6 @@ from .app import config
 from .connections import ConnectionManager
 from .logger import PortholeLogger
 
-logger = PortholeLogger(name=__name__)
-
 RE_SQL_STATEMENT = re.compile(''';(?=(?:[^"'`]*["'`][^"'`]*["'`])*[^"'`]*$)''')
 
 
@@ -77,9 +75,19 @@ class RowDict(OrderedDict):
 
 class QueryGenerator(object):
     """Execute SQL query and return results"""
-    def __init__(self, cm, filepath=None, filename=None, params=None, sql=None, multiple_statements=False):
+    def __init__(
+            self,
+            cm,
+            filepath=None,
+            filename=None,
+            params=None,
+            sql=None,
+            multiple_statements=False,
+            logger=None
+    ):
         if filename is not None and sql is not None:
             raise TypeError("Cannot give both 'filename' and 'sql' arguments")
+        self.logger = logger or PortholeLogger(name=__name__)
         self.cm = cm
         self.filepath = filepath
         self.filename = filename
@@ -112,11 +120,11 @@ class QueryGenerator(object):
             for statement in statements:
                 result_proxy = self.cm.conn.execute(statement)
                 log_string = self.filename if single_statement else str(statement)[:25]
-                logger.info("Executed {} against {}".format(log_string, self.cm.db))
+                self.logger.info("Executed {} against {}".format(log_string, self.cm.db))
             if result_proxy.cursor:
                 return self.fetch_results(result_proxy)
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             raise
 
     def _split_sql(self):
@@ -236,12 +244,13 @@ class QueryExecutor(object):
     with QueryExecutor(db=MyDB) as qe:
         result = qe.execute_query(sql='select count(*) from my_table')
     """
-    def __init__(self, db):
+    def __init__(self, db, logger=None):
         self.db = db
         self.cm = None
+        self.logger = logger or PortholeLogger(name="QueryExecutor")
 
     def create_database_connection(self):
-        self.cm = ConnectionManager(db=self.db)
+        self.cm = ConnectionManager(db=self.db, logger=self.logger)
         self.cm.connect()
 
     def close_database_connection(self):
@@ -254,7 +263,8 @@ class QueryExecutor(object):
             filename=filename,
             params=params,
             sql=sql,
-            multiple_statements=multiple_statements
+            multiple_statements=multiple_statements,
+            logger=self.logger
         )
         return query.execute()
 

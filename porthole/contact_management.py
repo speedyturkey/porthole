@@ -3,12 +3,11 @@ from porthole import ConnectionManager
 from .logger import PortholeLogger
 from porthole.models import automated_reports, automated_report_contacts, automated_report_recipients
 
-logger = PortholeLogger(name=__name__)
-
 
 class AutomatedReportContactManager(object):
     def __init__(self, database: str):
         self.database = database
+        self.logger = PortholeLogger(name=__name__)
 
     def execute_statement(self, statement: sa.sql.base.Executable):
         with ConnectionManager(self.database) as cm:
@@ -63,7 +62,7 @@ class AutomatedReportContactManager(object):
 
     def add_report(self, report_name: str, active: int = 1):
         if self.report_exists(report_name):
-            logger.warning(f"{report_name} already exists")
+            self.logger.warning(f"{report_name} already exists")
             return None
         self.create_record(
             table=automated_reports,
@@ -72,31 +71,31 @@ class AutomatedReportContactManager(object):
                 'active': active
             }
         )
-        logger.info(f"Report '{report_name}' created successfully")
+        self.logger.info(f"Report '{report_name}' created successfully")
 
     def report_is_active(self, report_name):
         return self.record_exists(automated_reports, {'report_name': report_name, 'active': 1})
 
     def activate_report(self, report_name):
         if self.report_is_active(report_name):
-            logger.warning(f"Report '{report_name}' is already active")
+            self.logger.warning(f"Report '{report_name}' is already active")
             return None
         self.update_record(automated_reports, {'report_name': report_name}, {'active': 1})
-        logger.info(f"Report '{report_name}' is now active")
+        self.logger.info(f"Report '{report_name}' is now active")
 
     def deactivate_report(self, report_name):
         if not self.report_is_active(report_name):
-            logger.warning(f"Report '{report_name}' is already inactive")
+            self.logger.warning(f"Report '{report_name}' is already inactive")
             return None
         self.update_record(automated_reports, {'report_name': report_name}, {'active': 0})
-        logger.info(f"Report '{report_name}' is now inactive")
+        self.logger.info(f"Report '{report_name}' is now inactive")
 
     def contact_exists(self, email_address: str):
         return self.record_exists(automated_report_contacts, {'email_address': email_address})
 
     def add_contact(self, last_name: str = None, first_name: str = None, email_address: str = None):
         if self.contact_exists(email_address):
-            logger.warning(f"Contact {last_name}, {first_name} ({email_address}) already exists ")
+            self.logger.warning(f"Contact {last_name}, {first_name} ({email_address}) already exists ")
             return None
         self.create_record(
             table=automated_report_contacts,
@@ -106,7 +105,7 @@ class AutomatedReportContactManager(object):
                 'email_address': email_address
             }
         )
-        logger.info(f"Contact {last_name}, {first_name} ({email_address}) created successfully")
+        self.logger.info(f"Contact {last_name}, {first_name} ({email_address}) created successfully")
 
     def report_recipient_exists(self, report_name: str, email_address: str):
         return self.record_exists(
@@ -121,7 +120,7 @@ class AutomatedReportContactManager(object):
         if recipient_type not in ['to', 'cc']:
             raise ValueError("Recipient type must be either `to` or `cc`.")
         if self.report_recipient_exists(report_name, email_address):
-            logger.warning(f"Recipient '{email_address}' already exists for report '{report_name}'")
+            self.logger.warning(f"Recipient '{email_address}' already exists for report '{report_name}'")
             return None
         self.create_record(
             table=automated_report_recipients,
@@ -131,11 +130,11 @@ class AutomatedReportContactManager(object):
                 'recipient_type': recipient_type
             }
         )
-        logger.info(f"{recipient_type} recipient '{email_address}' added successfully to report '{report_name}'")
+        self.logger.info(f"{recipient_type} recipient '{email_address}' added successfully to report '{report_name}'")
 
     def remove_report_recipient(self, report_name: str, email_address: str):
         if not self.report_recipient_exists(report_name, email_address):
-            logger.warning(f"Recipient '{email_address}' does not exist for report '{report_name}'")
+            self.logger.warning(f"Recipient '{email_address}' does not exist for report '{report_name}'")
             return None
         self.delete_record(
             table=automated_report_recipients,
@@ -144,4 +143,4 @@ class AutomatedReportContactManager(object):
                 'contact_id': self.get_record_id(automated_report_contacts, 'email_address', email_address),
             }
         )
-        logger.info(f"Recipient '{email_address}' removed successfully from report '{report_name}'")
+        self.logger.info(f"Recipient '{email_address}' removed successfully from report '{report_name}'")
