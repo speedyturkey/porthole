@@ -1,7 +1,7 @@
 import os
 from inspect import getfullargspec
 from argparse import ArgumentParser
-# from .alerts import Alert
+from .alerts import Alert
 from .app import config
 from .connections import ConnectionPool
 from .mailer import Mailer
