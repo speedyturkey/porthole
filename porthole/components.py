@@ -1,12 +1,12 @@
 import os
-from sqlalchemy import select
+import sqlalchemy as sa
 from . import TimeHelper
 from .app import config
+from .connections import ConnectionManager
 from .models import (
     automated_reports,
     automated_report_contacts,
     automated_report_recipients,
-    report_logs
 )
 from .mailer import Mailer
 from .related_record import RelatedRecord
@@ -20,8 +20,6 @@ class ReportWriter:
     The purpose of this class is to use the QueryGenerator and WorkbookBuilder
     together to make an Excel file and populate it with data.
     """
-    #TODO: Think of a better name for this class.
-
     def __init__(self, report_title, logger=None):
         self.report_title = report_title
         self.report_file = None
@@ -180,7 +178,13 @@ class DatabaseLogger:
 
 
 class NewDBLogger:
-    def __init__(self, cm, report_name, log_table, logger=None):
+    def __init__(
+            self,
+            cm: ConnectionManager,
+            report_name: str, 
+            log_table: sa.Table, 
+            logger: PortholeLogger = None
+    ):
         self.cm = cm
         self.report_name = report_name
         self.log_table = log_table
@@ -213,7 +217,7 @@ class ReportActiveChecker:
         """Queries database to determine if the 'active' attribute for this report
         is set to 1 (active) or 0 (inactive).
         """
-        statement = select(
+        statement = sa.select(
             [automated_reports.c.active]
         ).where(
             automated_reports.c.report_name == self.report_name
@@ -244,12 +248,13 @@ class RecipientsChecker:
 
     def get_recipients(self):
         """Performs lookup in database for report recipients based on report name."""
-        statement = select([automated_report_contacts.c.email_address,
-                            automated_report_recipients.c.recipient_type])\
-                        .select_from(automated_reports\
-                        .join(automated_report_recipients)\
-                        .join(automated_report_contacts))\
-                        .where(automated_reports.c.report_name==self.report_name)
+        statement = sa.select([
+            automated_report_contacts.c.email_address,
+            automated_report_recipients.c.recipient_type
+        ]).select_from(
+            automated_reports.join(automated_report_recipients).join(automated_report_contacts)).where(
+                        automated_reports.c.report_name == self.report_name
+        )
         try:
             q = QueryGenerator(cm=self.cm, sql=statement, logger=self.logger)
             results = q.execute()
