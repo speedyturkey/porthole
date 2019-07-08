@@ -33,6 +33,7 @@ class PortholeLogger(object):
         self.date_format = datefmt
         self.formatter = None
         self.error_buffer = None
+        self.extra = {}
         self.log_to_file = config['Logging'].getboolean('log_to_file', False)
         self.logfile = logfile or config['Logging'].get('logfile', None)
         self.log_to_db = log_to_db
@@ -105,19 +106,19 @@ class PortholeLogger(object):
         self.logger.debug(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        self.logger.info(msg, *args, **kwargs)
+        self.logger.info(msg, *args, extra=self.extra, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        self.logger.warning(msg, *args, **kwargs)
+        self.logger.warning(msg, *args, extra=self.extra, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        self.logger.error(msg, *args, **kwargs)
+        self.logger.error(msg, *args, extra=self.extra, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        self.logger.critical(msg, *args, **kwargs)
+        self.logger.critical(msg, *args, extra=self.extra, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
-        self.logger.exception(msg, *args, **kwargs)
+        self.logger.exception(msg, *args, extra=self.extra, **kwargs)
 
     def set_level(self, level):
         self.logger.setLevel(level)
@@ -139,6 +140,7 @@ class DatabaseHandler(logging.Handler):
         else:
             trace = None
         data = {
+            'report_log_id': record.__dict__.get('report_log_id'),
             'level_number': record.levelno,
             'level_name': record.levelname,
             'msg': record.msg,

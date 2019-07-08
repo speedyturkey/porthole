@@ -140,6 +140,7 @@ class DatabaseLogger:
         self.report_name = report_name
         self.log_table = log_table
         self.logger = logger or PortholeLogger(report_name)
+        self.report_log = None
 
     def create_record(self):
         """
@@ -156,6 +157,7 @@ class DatabaseLogger:
         except:
             self.logger.exception("Unable to create log record.")
         self.report_log = report_log
+        self.logger.extra.update(report_log_id=report_log.primary_key)
 
     def finalize_record(self):
         """Update log at conclusion of report execution to indicate success/failure."""
