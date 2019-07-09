@@ -23,7 +23,7 @@ class TestReportWriter(unittest.TestCase):
         os.unlink(writer.report_file)
 
     def test_create_worksheet(self):
-        writer = ReportWriter("Test Report")
+        writer = ReportWriter("Test Report 2")
         writer.build_file()
         self.assertEqual(writer.record_count, 0)
         test_query = TEST_QUERY.format(self.cm.schema)
@@ -33,8 +33,8 @@ class TestReportWriter(unittest.TestCase):
         self.assertTrue(writer.logger.error_buffer.empty)
 
     def test_invalid_sheet_name_raises_error(self):
-        "Should log an error if attempt to add worksheet with invalid name"
-        writer = ReportWriter("Test Report")
+        """Should log an error if attempt to add worksheet with invalid name"""
+        writer = ReportWriter("Test Report 3")
         writer.build_file()
         test_query = TEST_QUERY.format(self.cm.schema)
         writer.create_worksheet_from_query(self.cm, "sheet/1", sql=test_query)
