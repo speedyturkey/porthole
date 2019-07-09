@@ -57,7 +57,7 @@ report_log_details = Table(
     'report_log_details',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('report_log_id', Integer),
+    Column('report_log_id', Integer, ForeignKey(report_logs.c.id)),
     Column('level_number', Integer),
     Column('level_name', String(64)),
     Column('logger', String(64)),
