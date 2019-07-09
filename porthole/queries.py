@@ -34,13 +34,6 @@ class QueryResult(object):
     def as_dict(self):
         raise DeprecationWarning("QueryResult.as_dict method is no longer available and will be removed.")
 
-    def as_list_of_tuples(self):
-        """Returns contents as list of tuples with headers as first item"""
-        data = [tuple(row.values()) for row in self.result_data]
-        headers = tuple(self.field_names)
-        data.insert(0, headers)
-        return data
-
     def write_to_json(self, filename):
         with open(filename, 'w') as f:
             json.dump(self.result_data, f, default=self.json_converter)

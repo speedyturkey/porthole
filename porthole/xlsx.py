@@ -134,11 +134,12 @@ class WorkbookEditor(object):
         self.workbook_filename = workbook_filename
         self.workbook = openpyxl.load_workbook(filename=workbook_filename)
 
-    def replace_sheet_contents(self, sheet_name: str, data_rows: list) -> None:
+    def replace_sheet_contents(self, sheet_name: str, data_rows: list, headers: list) -> None:
         del self.workbook[sheet_name]
         worksheet = self.workbook.create_sheet(sheet_name)
+        worksheet.append(headers)
         for row in data_rows:
-            worksheet.append(row)
+            worksheet.append(list(row))
 
     def get_all_values(self, sheet_name: str) -> list:
         rows = []

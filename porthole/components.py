@@ -202,9 +202,8 @@ class ReportReadWriter(Loggable):
             self.write_location = os.path.join(self.write_file_path, save_as)
         
         results = self.execute_query(cm=cm, query=query, sql=sql, **query_kwargs)
-        formatted_results = results.as_list_of_tuples()
         wb = WorkbookEditor(workbook_filename=self.read_location)
-        wb.replace_sheet_contents(sheet_name=sheet_name, data_rows=formatted_results)
+        wb.replace_sheet_contents(sheet_name=sheet_name, data_rows=results.result_data, headers=results.field_names)
         wb.save_workbook(save_as=self.write_location)
 
     def execute_query(self, cm: ConnectionManager
