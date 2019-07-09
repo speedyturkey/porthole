@@ -48,7 +48,7 @@ class PortholeLogger(object):
     def setup_handlers(self):
         self.add_stream_handler()
         self.error_buffer = ErrorBuffer()
-        self.logger.addHandler(self.error_buffer)
+        self._add_handler(self.error_buffer)
         if self.log_to_file:
             self.add_file_handler()
         if self.log_to_db:
@@ -132,8 +132,7 @@ class DatabaseHandler(logging.Handler):
         self.database = database
         self.table = table
         self.cm = ConnectionManager(self.database, logger=logger)
-        self.cm.connect()
-        
+
     def emit(self, record):
         if record.exc_info:
             trace = traceback.format_exc()
@@ -150,12 +149,14 @@ class DatabaseHandler(logging.Handler):
         self._log_record_to_db(data)
 
     def _log_record_to_db(self, log_data: dict):
-
         statement = self.table.insert().values(**log_data)
         try:
+            self.cm.connect()
             self.cm.conn.execute(statement)
         except Exception as e:
             warnings.warn(f"Exception when writing log to database: {e}")
+        finally:
+            self.cm.close()
 
 
 class ErrorBuffer(logging.handlers.BufferingHandler):
