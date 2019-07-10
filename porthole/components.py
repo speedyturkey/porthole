@@ -1,5 +1,7 @@
 import os, sys
+from typing import Optional, Union
 from sqlalchemy import select
+import sqlalchemy
 from . import TimeHelper
 from .app import config
 from .models import (
@@ -11,8 +13,9 @@ from .models import (
 from .mailer import Mailer
 from .related_record import RelatedRecord
 from .queries import QueryGenerator
-from .xlsx import WorkbookBuilder
+from .xlsx import WorkbookBuilder, WorkbookEditor
 from .logger import PortholeLogger
+from .connections import ConnectionManager
 
 logger = PortholeLogger(name=__name__)
 
@@ -97,12 +100,11 @@ class ReportWriter(Loggable):
     def add_format(self, format_name, format_params):
         self.workbook_builder.add_format(format_name, format_params)
 
-    def execute_query(self, cm, query={}, sql=None, increment_counter=True):
+    def execute_query(self, cm: ConnectionManager, query={}, sql=None, increment_counter=True):
         """
         Args:
             cm              (ConnectionManager):
                             Object which contains connection to desired database.
-            sheet_name      (str): The name of the worksheet to be created.
             query           (dict): Optional. May contain filename and params for a query
                                 to be executed. If included, filename is required.
                     filename      (str): Name of file to be read without extension.
@@ -168,6 +170,62 @@ class ReportWriter(Loggable):
             worksheet_kwargs = {}
         results = self.execute_query(cm=cm, query=query, sql=sql, **query_kwargs)
         self.make_worksheet(sheet_name=sheet_name, query_results=results, **worksheet_kwargs)
+
+
+class ReportReadWriter(Loggable):
+
+    def __init__(self, report_filename: str
+                    , read_file_path: Optional[str]=None
+                    , write_file_path: Optional[str]=None
+                    , log_to=None):
+        self.report_filename = report_filename
+        if not read_file_path:
+            self.read_file_path = config['Default'].get('base_file_path')
+        if not write_file_path:
+            self.write_file_path = self.read_file_path
+        self.read_location = os.path.join(self.read_file_path, self.report_filename)
+        self.write_location = os.path.join(self.write_file_path, self.report_filename)
+        self.record_count = 0
+        super().__init__(log_to=log_to if log_to is not None else [])
+
+    def update_sheet_on_report_workbook(self, cm: ConnectionManager
+                                        , sheet_name: str
+                                        , query: Optional[dict]=None
+                                        , sql: Optional[str]=None
+                                        , query_kwargs: Optional[dict]=None
+                                        , save_as: Optional[str]=None) -> None:
+        if query is None:
+            query = {}
+        if query_kwargs is None:
+            query_kwargs = {}
+        if save_as:
+            self.write_location = os.path.join(self.write_file_path, save_as)
+        
+        results = self.execute_query(cm=cm, query=query, sql=sql, **query_kwargs)
+        wb = WorkbookEditor(workbook_filename=self.read_location)
+        wb.replace_sheet_contents(sheet_name=sheet_name, data_rows=results.result_data, headers=results.field_names)
+        wb.save_workbook(save_as=self.write_location)
+
+    def execute_query(self, cm: ConnectionManager
+                        , query: dict={}
+                        , sql: Union[str, sqlalchemy.sql.selectable.Select, None]=None
+                        , increment_counter: bool=True):
+        """
+        Executes SQL and returns QueryResult object, containing data and metadata.
+        """
+        filename = query.get('filename')
+        params = query.get('params')
+        q = QueryGenerator(cm=cm, filename=filename, params=params, sql=sql)
+        try:
+            results = q.execute()
+            if increment_counter:
+                self.record_count += results.result_count
+            return results
+        except:
+            error = "Unable to execute query {}".format(query.get('filename'))
+            logger.error(error)
+            self.log_error(error)
+
 
 
 class DatabaseLogger(Loggable):
@@ -306,3 +364,5 @@ The following errors were logged:\n""".format(self.report_title)
         for i, error in enumerate(self.error_log, 1):
             msg += str(i) + '. ' + error + '\n'
         return msg
+
+

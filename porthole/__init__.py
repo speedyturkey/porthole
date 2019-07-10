@@ -11,7 +11,7 @@ try:
     from .reports import BasicReport, GenericReport, ReportRunner
     from .queries import QueryExecutor, QueryGenerator, QueryReader, QueryResult
     from .workflows import SimpleWorkflow
-    from .xlsx import WorkbookBuilder
+    from .xlsx import WorkbookBuilder, WorkbookEditor
 except KeyError:
     print("Unable to import Porthole due to KeyError. Check config/config.ini.")
     print("{}: {}".format(sys.exc_info()[1].__doc__, sys.exc_info()[1]))
