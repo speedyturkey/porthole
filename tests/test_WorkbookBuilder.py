@@ -4,6 +4,7 @@ import unittest
 from porthole import config
 from porthole import WorkbookBuilder
 
+
 class TestWorkbookBuilder(unittest.TestCase):
     """
     report.workbook.worksheets()[0].name
@@ -13,11 +14,12 @@ class TestWorkbookBuilder(unittest.TestCase):
     """
 
     def setUp(self):
-        self.test_builder = WorkbookBuilder(filename="test_builder")
+        self.test_builder = WorkbookBuilder(filename="test_builder.xlsx")
         self.test_builder.create_workbook()
 
     def tearDown(self):
-        os.remove(self.test_builder.filename)
+        if os.path.exists(self.test_builder.filename):
+            os.remove(self.test_builder.filename)
 
     def test_add_worksheet(self):
         field_names = ['Field1', 'Field2']
