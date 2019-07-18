@@ -67,13 +67,13 @@ class TestQueries(unittest.TestCase):
         executor = QueryExecutor(db='Test')
         executor.create_database_connection()
         self.assertFalse(executor.cm.conn.closed)
-        result1 = executor.execute_query(sql='select * from flarp;')
+        result1 = executor.execute_query(sql='select * from sys.flarp;')
         self.assertIsInstance(result1, QueryResult)
         executor.close_database_connection()
         self.assertTrue(executor.cm.conn.closed)
         with QueryExecutor(db='Test') as qe:
             self.assertFalse(qe.cm.conn.closed)
-            result2 = qe.execute_query(sql='select * from flarp;')
+            result2 = qe.execute_query(sql='select * from sys.flarp;')
             self.assertIsInstance(result2, QueryResult)
 
 

@@ -2,12 +2,12 @@ from sqlalchemy import create_engine
 from .app import config
 from .logger import PortholeLogger
 
-logger = PortholeLogger(name=__name__)
-
 
 class ConnectionManager:
-    def __init__(self, db=None):
+    def __init__(self, db=None, logger=None):
         self.db = db
+        self.logger = logger or PortholeLogger(name=__name__)
+        self.rdbms = None
         self.db_host = None
         self.db_port = None
         self.db_user = None
@@ -38,7 +38,7 @@ class ConnectionManager:
             self.engine = self.create_engine()
             self.conn = self.engine.connect()
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             raise
 
     def create_engine(self):
@@ -77,7 +77,10 @@ class ConnectionManager:
 
 class ConnectionPool(object):
 
-    def __init__(self, dbs=[]):
+    def __init__(self, dbs=None, logger=None):
+        self.logger = logger or PortholeLogger(name=__name__)
+        if dbs is None:
+            dbs = []
         self.pool = {}
         for db in dbs:
             self.add_connection(db)
@@ -87,7 +90,7 @@ class ConnectionPool(object):
 
     def add_connection(self, db):
         if db not in self.connections():
-            cm = ConnectionManager(db)
+            cm = ConnectionManager(db, logger=self.logger)
             cm.connect()
             self.pool[db] = cm
         return self.get(db)

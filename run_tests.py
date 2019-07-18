@@ -35,13 +35,23 @@ def setup_test_db():
         test_metadata.create_all(cm.engine)
         create_fixtures(cm)
         cm.close()
+    if config[db]['rdbms'] == 'mysql':
+        with ConnectionManager(db) as cm:
+            metadata.create_all(cm.engine)
+            test_metadata.create_all(cm.engine)
+            create_fixtures(cm)
 
 
 def teardown_test_db():
+    db = config['Default']['database']
     try:
         os.unlink('test.db')
     except FileNotFoundError:
         pass
+    if config[db]['rdbms'] == 'mysql':
+        with ConnectionManager(db) as cm:
+            metadata.drop_all(cm.engine)
+            test_metadata.drop_all(cm.engine)
 
 
 def main():
