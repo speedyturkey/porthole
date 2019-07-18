@@ -17,6 +17,12 @@ automated_reports = Table(
     Column('active', Integer),
     Column('created_at', DateTime, server_default=func.now()),
     Column('updated_at', DateTime, onupdate=func.now()),
+    Column('report_description', String(255)),
+    Column('schedule_minute', String(32)),
+    Column('schedule_hour', String(32)),
+    Column('schedule_day_of_week', String(32)),
+    Column('schedule_day_of_month', String(32)),
+    Column('schedule_month_of_year', String(32))
 )
 
 automated_report_contacts = Table(
