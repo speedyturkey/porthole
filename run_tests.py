@@ -9,6 +9,7 @@ from tests.test_Mailer import TestMailer
 from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_Reports import TestBasicReport, TestGenericReport, TestReportRunner
+from tests.test_Tasks import TestDataTask
 from tests.test_Queries import TestQueries, TestRowDict
 from tests.test_components import TestReportWriter, TestReportActiveChecker
 from tests.test_filters import TestResultFilter
@@ -61,6 +62,7 @@ def main():
     test_classes_to_run = [
         TestAutomatedReportContactManager,
         TestConnectionManager,
+        TestDataTask,
         TestSimpleWorkflow,
         TestRelatedRecord,
         TestBasicReport,

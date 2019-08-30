@@ -164,7 +164,7 @@ class DatabaseLogger:
             data_to_update = {
                 'completed_at': TimeHelper.now(string=False),
                 'success': 0,
-                'error_detail': "; ".join([str(err) for err in error_buffer])[:255]
+                'error_detail': "; ".join([str(log.exc_text) for log in error_buffer if hasattr(log, 'exc_text')])[:255]
             }
         else:
             data_to_update = {
