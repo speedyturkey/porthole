@@ -219,6 +219,7 @@ class GenericReport(BasicReport, Loggable):
         self.db_logger = None
         self.active = None
         self.uploaded_to_s3 = False
+        self.all_recipients = []
         self.check_if_active()
         if self.active and self.logging_enabled:
             self.initialize_db_logger()
@@ -254,6 +255,7 @@ class GenericReport(BasicReport, Loggable):
             log_to=self.error_log
         )
         self.to_recipients, self.cc_recipients = checker.get_recipients()
+        self.all_recipients = self.to_recipients + self.cc_recipients
 
     def check_whether_to_publish(self):
         """Determines whether email should be sent based given errors, settings, and result count."""
@@ -277,7 +279,7 @@ class GenericReport(BasicReport, Loggable):
             if self.check_whether_to_publish():
                 self.publish()
             if self.db_logger is not None:
-                self.db_logger.finalize_record()
+                self.db_logger.finalize_record(self.all_recipients)
         if self.error_log:
             self.send_failure_notification()
         self.conns.close_all()
