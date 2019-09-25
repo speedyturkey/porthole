@@ -12,15 +12,23 @@ from email.mime.text import MIMEText
 from .app import config
 from .logger import PortholeLogger
 
-logger = PortholeLogger(name=__name__)
-
 COMMASPACE = ', '
 
 
 class Mailer:
-    def __init__(self, recipients=None, cc_recipients=None, debug_mode=None, text_format='plain', **kwargs):
+    def __init__(
+            self,
+            recipients=None,
+            cc_recipients=None,
+            debug_mode=None,
+            text_format='plain',
+            logger=None,
+            **kwargs
+    ):
+        self.logger = logger or PortholeLogger(name=__name__)
         self.recipients = recipients or []
         self.cc_recipients = cc_recipients or []
+        self.bcc_recipients = []
         self.subject = None
         self.message = None
         self.properties = kwargs
@@ -39,7 +47,7 @@ class Mailer:
 
     def send_email(self):
         if config['Email']['disabled'] == 'True':
-            logger.info("Email disabled - exiting mailer.")
+            self.logger.info("Email disabled - exiting mailer.")
             exit()
 
         # Create the enclosing (outer) message
@@ -52,8 +60,6 @@ class Mailer:
             outer['To'] = COMMASPACE.join(self.recipients)
             outer['CC'] = COMMASPACE.join(self.cc_recipients)
 
-        msg = MIMEBase('application', "octet-stream")
-
         # Add the text of the email
         if self.text_format.lower() not in ['plain', 'html']:
             raise ValueError(
@@ -65,30 +71,35 @@ class Mailer:
         # Add the attachments
         if self.attachments:
             for file in self.attachments:
+                msg = MIMEBase('application', "octet-stream")
                 try:
                     with open(file, 'rb') as fp:
                         msg.set_payload(fp.read())
                     encoders.encode_base64(msg)
-                    msg.add_header('Content-Disposition',
-                                   'attachment',
-                                   filename=os.path.basename(file))
+                    msg.add_header(
+                        'Content-Disposition',
+                        'attachment',
+                        filename=os.path.basename(file)
+                    )
                     outer.attach(msg)
                 except Exception as e:
-                    logger.exception(e)
+                    self.logger.exception(e)
                     raise
 
         composed = outer.as_string()
 
         if self.debug_mode:
-            logger.info("""Debug mode active. Sending only to designated debug recipient(s).
+            self.logger.info(f"""Debug mode active. Sending only to designated debug recipient(s).
 
 Active report would have been sent to:
-            "To" Recipients: {}
-            "CC" Recipients: {}""".format(self.recipients, self.cc_recipients))
+            "To" Recipients: {self.recipients}
+            "CC" Recipients: {self.cc_recipients}
+            "BCC" Recipients: {self.bcc_recipients}""")
             all_recipients = self.debug_recipients
         else:
-            all_recipients = set(self.recipients + self.cc_recipients)
+            all_recipients = set(self.recipients + self.cc_recipients + self.bcc_recipients)
             all_recipients = list(filter(None, all_recipients))
+            all_recipients.extend(self.bcc_recipients)
             all_recipients.append(self.admin_email)
 
         try:
@@ -101,9 +112,9 @@ Active report would have been sent to:
                            composed)
                 self.all_sent_to_recipients = all_recipients
                 s.close()
-                logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
+                self.logger.info("Email with subject '{}...' sent to {} recipients".format(self.subject, len(all_recipients)))
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             raise
 
 

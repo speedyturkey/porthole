@@ -3,11 +3,13 @@ import unittest
 from porthole import config, ConnectionManager
 from porthole.models import metadata
 from tests.fixtures import test_metadata, create_fixtures
+from tests.test_AutomatedReportContactManager import TestAutomatedReportContactManager
 from tests.test_ConnectionManager import TestConnectionManager
 from tests.test_Mailer import TestMailer
 from tests.test_SimpleWorkflow import TestSimpleWorkflow
 from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_Reports import TestBasicReport, TestGenericReport, TestReportRunner
+from tests.test_Tasks import TestDataTask
 from tests.test_Queries import TestQueries, TestRowDict
 from tests.test_components import TestReportWriter, TestReportActiveChecker
 from tests.test_filters import TestResultFilter
@@ -34,13 +36,23 @@ def setup_test_db():
         test_metadata.create_all(cm.engine)
         create_fixtures(cm)
         cm.close()
+    if config[db]['rdbms'] == 'mysql':
+        with ConnectionManager(db) as cm:
+            metadata.create_all(cm.engine)
+            test_metadata.create_all(cm.engine)
+            create_fixtures(cm)
 
 
 def teardown_test_db():
+    db = config['Default']['database']
     try:
         os.unlink('test.db')
     except FileNotFoundError:
         pass
+    if config[db]['rdbms'] == 'mysql':
+        with ConnectionManager(db) as cm:
+            metadata.drop_all(cm.engine)
+            test_metadata.drop_all(cm.engine)
 
 
 def main():
@@ -48,20 +60,22 @@ def main():
 
     # Select all of your test classes here.
     test_classes_to_run = [
-                            TestConnectionManager,
-                            TestSimpleWorkflow,
-                            TestRelatedRecord,
-                            TestBasicReport,
-                            TestGenericReport,
-                            TestMailer,
-                            TestReportRunner,
-                            TestQueries,
-                            TestRowDict,
-                            TestReportWriter,
-                            TestReportActiveChecker,
-                            TestResultFilter,
-                            TestWorkbookBuilder
-                            ]
+        TestAutomatedReportContactManager,
+        TestConnectionManager,
+        TestDataTask,
+        TestSimpleWorkflow,
+        TestRelatedRecord,
+        TestBasicReport,
+        TestGenericReport,
+        TestMailer,
+        TestReportRunner,
+        TestQueries,
+        TestRowDict,
+        TestReportWriter,
+        TestReportActiveChecker,
+        TestResultFilter,
+        TestWorkbookBuilder
+    ]
 
     # Setup
     loader = unittest.TestLoader()

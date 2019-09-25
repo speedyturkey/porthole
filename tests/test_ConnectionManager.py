@@ -33,5 +33,5 @@ class TestConnectionManager(unittest.TestCase):
     def test_context_manager(self):
         with ConnectionManager(db='Test') as cm:
             self.assertFalse(cm.closed())
-            cm.conn.execute("select * from flarp;")
+            cm.conn.execute("select * from sys.flarp;")
         self.assertTrue(cm.closed())
