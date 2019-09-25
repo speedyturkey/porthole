@@ -7,8 +7,6 @@ except ImportError:
 from .app import config
 from .logger import PortholeLogger
 
-logger = PortholeLogger("porthole.Uploaders")
-
 
 class S3Uploader(object):
     def __init__(self, debug_mode: bool = False) -> None:
@@ -16,6 +14,7 @@ class S3Uploader(object):
             raise ModuleNotFoundError(
                 "boto3 is a required dependency to use the S3Uploader class, but is not currently installed."
             )
+        self.logger = PortholeLogger("porthole.Uploaders")
         self.debug_mode = debug_mode or config.getboolean('Debug', 'debug_mode')
         s3_profile = config['AWS']['S3']
         session_params = {
@@ -29,7 +28,7 @@ class S3Uploader(object):
 
     def upload_file(self, key: str, filename: str, bucket: str = None, s3config: TransferConfig = None) -> bool:
         if self.debug_mode:
-            logger.info(
+            self.logger.info(
                 f"Debug mode active. Would have uploaded {filename} to {bucket}/{key}."
             )
             return True
@@ -43,11 +42,11 @@ class S3Uploader(object):
             s3config = TransferConfig(multipart_threshold=8388608 * 6)
         try:
             self.session.upload_file(Bucket=bucket, Key=key, Filename=filename, Config=s3config)
-            logger.info(f"Uploaded {filename} to {bucket}/{key}")
+            self.logger.info(f"Uploaded {filename} to {bucket}/{key}")
             return True
         except FileNotFoundError:
-            logger.exception(f"Unable to upload {filename}. File not found.")
+            self.logger.exception(f"Unable to upload {filename}. File not found.")
             return False
         except Exception:
-            logger.exception("Exception occurred during upload.")
+            self.logger.exception("Exception occurred during upload.")
             raise

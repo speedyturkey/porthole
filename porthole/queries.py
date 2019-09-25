@@ -6,8 +6,6 @@ from .app import config
 from .connections import ConnectionManager
 from .logger import PortholeLogger
 
-logger = PortholeLogger(name=__name__)
-
 RE_SQL_STATEMENT = re.compile(''';(?=(?:[^"'`]*["'`][^"'`]*["'`])*[^"'`]*$)''')
 
 
@@ -77,22 +75,31 @@ class RowDict(OrderedDict):
 
 class QueryGenerator(object):
     """Execute SQL query and return results"""
-    def __init__(self, cm, filename=None, params=None, sql=None, multiple_statements=False):
+    def __init__(
+            self,
+            cm,
+            filepath=None,
+            filename=None,
+            params=None,
+            sql=None,
+            multiple_statements=False,
+            logger=None
+    ):
         if filename is not None and sql is not None:
             raise TypeError("Cannot give both 'filename' and 'sql' arguments")
+        self.logger = logger or PortholeLogger(name=__name__)
         self.cm = cm
+        self.filepath = filepath
         self.filename = filename
         self.params = params
-        self.sql = sql
+        self.raw_sql = sql
+        self.sql = None
         self.multiple_statements = multiple_statements
 
     def construct_query(self):
         """Read and parameterize (if necessary) a .sql file for execution."""
-        if self.filename:
-            reader = QueryReader(filename=self.filename, params=self.params)
-            self.sql = reader.sql
-        else:
-            raise Exception("Cannot construct query without providing the SQL filename.")
+        reader = QueryReader(filepath=self.filepath, filename=self.filename, raw_sql=self.raw_sql, params=self.params)
+        return reader.sql
 
     def execute(self):
         """
@@ -102,7 +109,7 @@ class QueryGenerator(object):
         Future implementations may allow for a sequence of results to be returned.
         """
         if self.sql is None:
-            self.construct_query()
+            self.sql = self.construct_query()
         # Only SQL strings can be split, not (e.g.) SQLAlchemy statements.
         if self.multiple_statements and isinstance(self.sql, str):
             statements = self._split_sql()
@@ -113,11 +120,11 @@ class QueryGenerator(object):
             for statement in statements:
                 result_proxy = self.cm.conn.execute(statement)
                 log_string = self.filename if single_statement else str(statement)[:25]
-                logger.info("Executed {} against {}".format(log_string, self.cm.db))
+                self.logger.info("Executed {} against {}".format(log_string, self.cm.db))
             if result_proxy.cursor:
                 return self.fetch_results(result_proxy)
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             raise
 
     def _split_sql(self):
@@ -142,6 +149,10 @@ class QueryReader(object):
     """
     QueryReader is used to read, and optionally to parameterize, .sql files.
 
+    By default, it is assumed that your query lives in your project's default
+    query path. Override this behavior by providing a value for the `filepath`
+    parameter.
+
     Saved queries requiring parameters at runtime should use placeholders in the format
     matching the raw_pattern attribute, which is by default:
         #{parameter_name} e.g. #{first_name}, #{last_name}, etc.
@@ -161,20 +172,15 @@ class QueryReader(object):
     select * from table where field = 'value';
 
     """
-    def __init__(self, filename=None, params=None):
+    def __init__(self, filepath=None, filename=None, raw_sql=None, params=None):
         self.filename = filename
         self.params = params
-        self.raw_sql = None
+        self.raw_sql = raw_sql
         self.sql = None
-        self.query_path = config['Default']['query_path']
-        self.raw_pattern = '(#{[a-zA-Z_]*})'
         self.to_replace = None
-        if filename:
-            self.read()
-            self.find_values_to_replace()
-            if self.to_replace:
-                self.replace_params()
-            self.validate()
+        self.query_path = filepath or config['Default']['query_path']
+        self.raw_pattern = '(#{[a-zA-Z_]*})'
+        self.process_sql()
 
     def __repr__(self):
         if self.sql:
@@ -182,14 +188,24 @@ class QueryReader(object):
         elif self.raw_sql:
             return self.raw_sql
         else:
-            return "< QueryReader object >"
+            return "< Empty QueryReader object >"
+
+    def process_sql(self):
+        if self.filename:
+            self.read()
+        if isinstance(self.raw_sql, str):
+            self.find_values_to_replace()
+        if self.to_replace:
+            self.replace_params()
+            self.validate()
+        else:
+            self.sql = self.raw_sql
 
     def read(self):
         """Reads and stores query contents"""
         file_path = os.path.join(self.query_path, self.filename + '.sql')
         with open(file_path, 'r') as f:
             self.raw_sql = f.read()
-            self.sql = self.raw_sql
 
     def find_values_to_replace(self):
         """Use pattern to identify all parameters in raw sql which need to be replaced."""
@@ -228,24 +244,27 @@ class QueryExecutor(object):
     with QueryExecutor(db=MyDB) as qe:
         result = qe.execute_query(sql='select count(*) from my_table')
     """
-    def __init__(self, db):
+    def __init__(self, db, logger=None):
         self.db = db
         self.cm = None
+        self.logger = logger or PortholeLogger(name="QueryExecutor")
 
     def create_database_connection(self):
-        self.cm = ConnectionManager(db=self.db)
+        self.cm = ConnectionManager(db=self.db, logger=self.logger)
         self.cm.connect()
 
     def close_database_connection(self):
         self.cm.close()
 
-    def execute_query(self, filename=None, params=None, sql=None, multiple_statements=False):
+    def execute_query(self, filepath=None, filename=None, params=None, sql=None, multiple_statements=False):
         query = QueryGenerator(
             cm=self.cm,
+            filepath=filepath,
             filename=filename,
             params=params,
             sql=sql,
-            multiple_statements=multiple_statements
+            multiple_statements=multiple_statements,
+            logger=self.logger
         )
         return query.execute()
 

@@ -38,6 +38,12 @@ class TestQueries(unittest.TestCase):
         self.assertTrue(s.raw_sql, s.sql)
         self.assertIsNotNone(s.sql)
 
+    def test_queryreader_filepath(self):
+        """A QueryReader can be instantiated when no parameters are required."""
+        s = QueryReader(filepath='queries/tests', filename='test_query_no_params')
+        self.assertTrue(s.raw_sql, s.sql)
+        self.assertIsNotNone(s.sql)
+
     def test_queryreader_params(self):
         """A QueryReader can be instantiated when all required parameters are provided."""
         s = QueryReader(filename='tests/test_query_with_params', params = {'foo': 'value1', 'b_ar': 'value2', 'Baz': 'value3'})
@@ -61,13 +67,13 @@ class TestQueries(unittest.TestCase):
         executor = QueryExecutor(db='Test')
         executor.create_database_connection()
         self.assertFalse(executor.cm.conn.closed)
-        result1 = executor.execute_query(sql='select * from flarp;')
+        result1 = executor.execute_query(sql='select * from sys.flarp;')
         self.assertIsInstance(result1, QueryResult)
         executor.close_database_connection()
         self.assertTrue(executor.cm.conn.closed)
         with QueryExecutor(db='Test') as qe:
             self.assertFalse(qe.cm.conn.closed)
-            result2 = qe.execute_query(sql='select * from flarp;')
+            result2 = qe.execute_query(sql='select * from sys.flarp;')
             self.assertIsInstance(result2, QueryResult)
 
 

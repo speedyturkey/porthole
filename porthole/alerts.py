@@ -11,7 +11,7 @@ class Alert(object):
         project_name = config['Default'].get('project', '<Unspecified Project>')
         mailer = Mailer()
         mailer.recipients = recipients or [config['Admin']['admin_email']]
-        mailer.subject = "{} ALERT: ".format(project_name.upper()) + subject
+        mailer.subject = f"{project_name.upper()} ALERT: {subject}"
         mailer.message = message
         self.mailer = mailer
 
@@ -36,13 +36,12 @@ def send_alert_on_exception(function_to_be_decorated):
     """Use as a decorator to ensure that an alert is sent for any unhandled exceptions."""
     @wraps(function_to_be_decorated)
     def decorated_function():
-        project_name = config['Default'].get('project', '<Unspecified Project>')
         calling_module = getattr(function_to_be_decorated, '__module__', '<Unspecified Module>')
         try:
             function_to_be_decorated()
         except Exception as error:
             alert = Alert(
-                subject="{} Unhandled Exception Notification: ".format(project_name) + calling_module,
+                subject=f"Unhandled Exception Notification: {calling_module}",
                 message=str(error)
             )
             logger.error("Unhandled exception in {} - sending alert message.".format(calling_module))

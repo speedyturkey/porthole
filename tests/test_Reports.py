@@ -8,12 +8,6 @@ Test email is not sent on failure.
 from types import MethodType
 import unittest
 from porthole import config, BasicReport, GenericReport, ReportRunner
-import pickle
-
-
-def pickle_object(obj, filename):
-    with open(filename, 'wb') as output:
-        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
 def mocked_send_email(self):
@@ -60,26 +54,26 @@ class TestGenericReport(unittest.TestCase):
 
     def test_logging(self):
         report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title='Test Report - Active'
-                                )
+            report_name='test_report_active',
+            report_title='Test Report - Active'
+        )
         self.assertFalse(report.email_sent)
         self.assertIsNotNone(report.db_logger)
 
     def test_disable_logging(self):
         report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title='Test Report - Active'
-                                , logging_enabled=False
-                                )
+            report_name='test_report_active',
+            report_title='Test Report - Active',
+            logging_enabled=False
+        )
         self.assertFalse(hasattr(report, 'report_log'))
         self.assertIsNone(report.db_logger)
 
     def test_send_email(self):
         report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title='Test Report - Active'
-                                )
+            report_name='test_report_active',
+            report_title='Test Report - Active'
+        )
         report.send_email = MethodType(mocked_send_email, report)
         report.get_recipients()
         report.subject = "test_send_email"
@@ -92,9 +86,9 @@ class TestGenericReport(unittest.TestCase):
     def test_send_if_blank(self):
         self.assertTrue(True)
         report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title='Test Report - Active'
-                                )
+            report_name='test_report_active',
+            report_title='Test Report - Active'
+        )
         report.send_if_blank = False
         report.build_file()
         report.send_email = MethodType(mocked_send_email, report)
@@ -115,34 +109,41 @@ class TestGenericReport(unittest.TestCase):
         """Should log an error if attempt to instantiate report that doesn't exist"""
         with self.assertRaises(Exception) as context:
             report = GenericReport(
-                                    report_name='does_not_exist'
-                                    , report_title='Does Not Exist'
-                                    )
+                report_name='does_not_exist',
+                report_title='Does Not Exist'
+            )
         self.assertTrue("Report <does_not_exist> was not found" in str(context.exception))
 
     def test_non_existent_query_raises_error(self):
         """Should raise an error if attempt to run query that doesn't exist"""
         report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title='Test Report - Active'
-                                )
+            report_name='test_report_active',
+            report_title='Test Report - Active',
+            logger_name="test_non_existent_query_raises_error"
+        )
         report.build_file()
-        report.create_worksheet_from_query(query={'filename': 'does_not_exist'},
-                                            sheet_name='Sheet1')
-        self.assertFalse(report.error_log == [])
+        report.create_worksheet_from_query(
+            query={'filename': 'does_not_exist'},
+            sheet_name='Sheet1'
+        )
+
+        self.assertFalse(report.logger.error_buffer.empty)
         report.db_logger.finalize_record()
 
     def test_send_failure_notification_on_error(self):
         """On error, should send failure notification and should not send report."""
         report = GenericReport(
-                                report_name='test_report_active'
-                                , report_title='Test Report - Active'
-                                )
+            report_name='test_report_active',
+            report_title='Test Report - Active',
+            logger_name="test_send_failure_notification_on_error"
+        )
         report.send_failure_notification = MethodType(mocked_send_failure_notification, report)
         report.build_file()
-        report.create_worksheet_from_query(sheet_name='Sheet1',
-                                            sql=TEST_QUERY)
-        report.error_log.append("Forced error")
+        report.create_worksheet_from_query(
+            sheet_name='Sheet1',
+            sql=TEST_QUERY
+        )
+        report.logger.error("Forced error")
         report.subject = "test_send_failure_notification_on_error"
         report.message = "test_send_failure_notification_on_error"
         report.execute()
@@ -177,14 +178,13 @@ class TestReportRunner(unittest.TestCase):
         self.assertTrue(parsed.debug_mode)
 
 
-
-
-TEST_QUERY = "select count(*) from flarp;"
+TEST_QUERY = "select count(*) from sys.flarp;"
 
 
 def run():
     suite = unittest.TestLoader().loadTestsFromTestCase(TestGenericReport)
     unittest.TextTestRunner(verbosity=3).run(suite)
+
 
 if __name__ == '__main__':
     unittest.main()
