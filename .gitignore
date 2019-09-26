@@ -2,6 +2,7 @@ config.ini
 *.DS_Store
 *.db
 .idea
+*.xlsx
 
 # GitHub template from https://github.com/github/gitignore/blob/master/Python.gitignore
 
