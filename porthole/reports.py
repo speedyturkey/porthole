@@ -299,10 +299,12 @@ class GenericReport(BasicReport):
         if self.report_writer:
             self.report_writer.close_workbook()
         if self.active:
-            if self.check_whether_to_publish():
+            should_publish = self.check_whether_to_publish()
+            if should_publish:
                 self.publish()
             if self.db_logger is not None:
-                self.db_logger.finalize_record(self.all_recipients)
+                recipients = self.all_recipients if should_publish else None
+                self.db_logger.finalize_record(recipients)
         if self.has_errors:
             self.send_failure_notification()
         self.conns.close_all()
