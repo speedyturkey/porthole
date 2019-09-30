@@ -84,7 +84,6 @@ class TestGenericReport(unittest.TestCase):
         report.conns.close_all()
 
     def test_send_if_blank(self):
-        self.assertTrue(True)
         report = GenericReport(
             report_name='test_report_active',
             report_title='Test Report - Active'
@@ -149,6 +148,16 @@ class TestGenericReport(unittest.TestCase):
         report.execute()
         self.assertFalse(report.email_sent)
         self.assertTrue(report.failure_notification_sent)
+
+    def test_report_recipients(self):
+        report = GenericReport(
+            report_name='test_report_active',
+            report_title='Test Report - Active'
+        )
+        report.get_recipients()
+        self.assertTrue(report.to_recipients[0] == 'speedyturkey@gmail.com')
+        self.assertTrue(report.cc_recipients[0] == 'DaStump@example.com')
+        self.assertTrue(len(report.all_recipients) == 2)
 
 
 class TestReportRunner(unittest.TestCase):
