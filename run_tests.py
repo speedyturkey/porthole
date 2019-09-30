@@ -11,7 +11,7 @@ from tests.test_RelatedRecord import TestRelatedRecord
 from tests.test_Reports import TestBasicReport, TestGenericReport, TestReportRunner
 from tests.test_Tasks import TestDataTask
 from tests.test_Queries import TestQueries, TestRowDict
-from tests.test_components import TestReportWriter, TestReportActiveChecker
+from tests.test_components import TestReportWriter, TestReportActiveChecker, TestDBLogger
 from tests.test_filters import TestResultFilter
 # Query Handlers
 # Time Helper
@@ -66,6 +66,7 @@ def main():
         TestSimpleWorkflow,
         TestRelatedRecord,
         TestBasicReport,
+        TestDBLogger,
         TestGenericReport,
         TestMailer,
         TestReportRunner,
