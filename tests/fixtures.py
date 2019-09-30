@@ -36,11 +36,13 @@ automated_reports_data = [
         ]
 
 contact_data = [
-        {'last_name': 'LAST', 'first_name': 'FIRST', 'email_address': 'speedyturkey@gmail.com'}
+        {'last_name': 'LAST', 'first_name': 'FIRST', 'email_address': 'speedyturkey@gmail.com'},
+        {'last_name': 'Stumpleberry', 'first_name': 'Bargosh', 'email_address': 'DaStump@example.com'}
         ]
 
 recipient_data = [
-        {'contact_id': 1, 'report_id': 1, 'recipient_type': 'to'}
+        {'contact_id': 1, 'report_id': 1, 'recipient_type': 'to'},
+        {'contact_id': 2, 'report_id': 1, 'recipient_type': 'cc'}
         ]
 
 def create_fixtures(cm):

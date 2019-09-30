@@ -1,6 +1,6 @@
 import os, unittest
-from porthole import ConnectionManager, config
-from porthole.components import ReportWriter, ReportActiveChecker, RecipientsChecker
+from porthole import ConnectionManager, config, QueryExecutor
+from porthole.components import ReportWriter, ReportActiveChecker, RecipientsChecker, DatabaseLogger
 
 TEST_QUERY = "select count(*) from {}.flarp;"
 default_db = config['Default'].get('database')
@@ -74,3 +74,32 @@ class TestRecipientsChecker(unittest.TestCase):
         checker.get_recipients()
         checker.assertTrue(checker.to_recipients)
         checker.assertTrue(checker.cc_recipients)
+
+
+class TestDBLogger(unittest.TestCase):
+
+    def setUp(self):
+        self.cm = ConnectionManager(default_db)
+        self.cm.connect()
+
+    def tearDown(self):
+        self.cm.close()
+
+    def test_create_and_finalize(self):
+        db_logger = DatabaseLogger(cm=self.cm, report_name="TestDBLogger")
+        db_logger.create_record()
+        self.assertIsInstance(db_logger.report_log.primary_key, int)
+        self.assertTrue(db_logger.report_log.inserted)
+        self.assertFalse(db_logger.report_log.updated)
+        db_logger.finalize_record()
+        self.assertTrue(db_logger.report_log.updated)
+
+    def test_log_recipients(self):
+        test_recipients = ["recipient1@example.com", "recipient2@example.com"]
+        db_logger = DatabaseLogger(cm=self.cm, report_name="TestDBLogger")
+        db_logger.create_record()
+        db_logger.finalize_record(test_recipients)
+        sql = f"select recipients from {self.cm.schema}.report_logs where id = {db_logger.report_log.primary_key}"
+        with QueryExecutor(default_db) as qe:
+            result = qe.execute_query(sql=sql)
+        self.assertEqual(result.result_data[0]['recipients'], "; ".join(test_recipients))

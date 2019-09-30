@@ -13,7 +13,7 @@ automated_reports = Table(
     'automated_reports',
     metadata,
     Column('report_id', Integer, primary_key=True),
-    Column('report_name', String(64), nullable=False),
+    Column('report_name', String(64), nullable=False, unique=True),
     Column('active', Integer),
     Column('created_at', DateTime, server_default=func.now()),
     Column('updated_at', DateTime, onupdate=func.now()),
@@ -55,6 +55,7 @@ report_logs = Table(
     Column('completed_at', DateTime),
     Column('success', Boolean),
     Column('error_detail', String(255)),
+    Column('recipients', Text),
     Column('created_at', DateTime, server_default=func.now()),
     Column('updated_at', DateTime, onupdate=func.now()),
 )
