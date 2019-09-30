@@ -178,6 +178,6 @@ Execute the command `python run_tests.py`.
 
 ## Authors
 
-* **Billy McMonagle** - *Initial work* - [GitHub](https://github.com/speedyturkey)
+* **Billy McMonagle** - *Maintainer* - [GitHub](https://github.com/speedyturkey)
 * **Ed Nunes ** - *Contributor* - [GitHub](https://github.com/nunie123)
 * **Chase Hudson ** - *Contributor* - [GitHub](https://github.com/Chase-H)
