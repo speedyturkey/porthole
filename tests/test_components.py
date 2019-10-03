@@ -103,3 +103,12 @@ class TestDBLogger(unittest.TestCase):
         with QueryExecutor(default_db) as qe:
             result = qe.execute_query(sql=sql)
         self.assertEqual(result.result_data[0]['recipients'], "; ".join(test_recipients))
+
+    def test_blank_recipients(self):
+        db_logger = DatabaseLogger(cm=self.cm, report_name="TestDBLogger")
+        db_logger.create_record()
+        db_logger.finalize_record(all_recipients=None)
+        sql = f"select recipients from {self.cm.schema}.report_logs where id = {db_logger.report_log.primary_key}"
+        with QueryExecutor(default_db) as qe:
+            result = qe.execute_query(sql=sql)
+        self.assertIsNone(result.result_data[0]['recipients'])
