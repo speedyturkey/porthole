@@ -7,7 +7,7 @@ Test email is not sent on failure.
 
 from types import MethodType
 import unittest
-from porthole import config, BasicReport, GenericReport, ReportRunner
+from porthole import config, BasicReport, GenericReport, ReportRunner, QueryExecutor
 
 
 def mocked_send_email(self):
@@ -158,6 +158,28 @@ class TestGenericReport(unittest.TestCase):
         self.assertTrue(report.to_recipients[0] == 'speedyturkey@gmail.com')
         self.assertTrue(report.cc_recipients[0] == 'DaStump@example.com')
         self.assertTrue(len(report.all_recipients) == 2)
+
+    def test_uploader(self):
+        report = GenericReport(
+            report_name='test_report_active',
+            report_title='Test Report - Active',
+            publish_to='s3'
+        )
+        report.build_file()
+        report.create_worksheet_from_query(
+            sheet_name='Sheet1',
+            sql=TEST_QUERY
+        )
+        self.assertFalse(report.uploaded_to_s3)
+        report.execute()
+        self.assertTrue(report.uploaded_to_s3)
+        self.assertFalse(report.email_sent)
+
+        cm = report.add_conn(report.default_db)
+        sql = f"select recipients from {cm.schema}.report_logs where id = {report.db_logger.report_log.primary_key}"
+        with QueryExecutor(report.default_db) as qe:
+            result = qe.execute_query(sql=sql)
+        self.assertIsNone(result.result_data[0]['recipients'])
 
 
 class TestReportRunner(unittest.TestCase):

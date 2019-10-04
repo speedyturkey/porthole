@@ -159,7 +159,7 @@ class DatabaseLogger:
 
     def finalize_record(self, all_recipients=None):
         """Update log at conclusion of report execution to indicate success/failure."""
-        all_recipients = all_recipients if all_recipients else []
+        all_recipients = "; ".join(all_recipients) if all_recipients else None
         error_buffer = self.logger.error_buffer.buffer
         if error_buffer:
             data_to_update = {
@@ -171,7 +171,7 @@ class DatabaseLogger:
             data_to_update = {
                 'completed_at': TimeHelper.now(string=False),
                 'success': 1,
-                'recipients': "; ".join(all_recipients)
+                'recipients': all_recipients
             }
         try:
             self.report_log.update(data_to_update)
