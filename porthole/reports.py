@@ -244,7 +244,9 @@ class GenericReport(BasicReport):
         self.uploaded_to_s3 = False
         self.all_recipients = []
         self.check_if_active()
-        if self.active and self.logging_enabled:
+        disable_report_logs = config['Logging'].getboolean('disable_report_logs', False)
+        should_log = self.logging_enabled and not disable_report_logs
+        if self.active and should_log:
             self.initialize_db_logger()
 
     @property

@@ -69,6 +69,15 @@ class TestGenericReport(unittest.TestCase):
         self.assertFalse(hasattr(report, 'report_log'))
         self.assertIsNone(report.db_logger)
 
+    def test_disable_report_logs(self):
+        config['Logging']['disable_report_logs'] = 'True'
+        report = GenericReport(
+            report_name='test_report_active',
+            report_title='Test Report - Active'
+        )
+        self.assertIsNone(report.db_logger)
+        config['Logging']['disable_report_logs'] = 'False'
+
     def test_send_email(self):
         report = GenericReport(
             report_name='test_report_active',
