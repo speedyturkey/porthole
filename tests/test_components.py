@@ -69,11 +69,11 @@ class TestRecipientsChecker(unittest.TestCase):
 
     def test_get_recipients(self):
         checker = RecipientsChecker(cm=self.cm, report_name='test_report_active')
-        checker.assertFalse(checker.to_recipients)
-        checker.assertFalse(checker.cc_recipients)
+        self.assertFalse(checker.to_recipients)
+        self.assertFalse(checker.cc_recipients)
         checker.get_recipients()
-        checker.assertTrue(checker.to_recipients)
-        checker.assertTrue(checker.cc_recipients)
+        self.assertTrue(checker.to_recipients)
+        self.assertTrue(checker.cc_recipients)
 
 
 class TestDBLogger(unittest.TestCase):

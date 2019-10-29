@@ -3,7 +3,6 @@ import xlsxwriter
 import openpyxl
 
 
-
 class WorkbookBuilder(object):
     """
     Allows for creation of Excel workbooks containing arbitrary worksheets
@@ -148,7 +147,7 @@ class WorkbookEditor(object):
             rows.append(row)
         return rows
     
-    def save_workbook(self, save_as: str=None) -> None:
+    def save_workbook(self, save_as: str = None) -> None:
         if save_as is None:
             save_as=self.workbook_filename
         self.workbook.save(save_as)
