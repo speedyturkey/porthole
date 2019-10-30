@@ -1,6 +1,7 @@
-from sqlalchemy import MetaData, Table, Column, Integer, String, DateTime, Boolean, ForeignKey, func
+from sqlalchemy import MetaData, Table, Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import insert
 from porthole import config
-from porthole.models import automated_reports, automated_report_contacts, automated_report_recipients
+from porthole.models import AutomatedReport, AutomatedReportContact, AutomatedReportRecipient
 
 
 schema = config[config['Default']['database']]['schema']
@@ -45,8 +46,9 @@ recipient_data = [
         {'contact_id': 2, 'report_id': 1, 'recipient_type': 'cc'}
         ]
 
+
 def create_fixtures(cm):
     cm.conn.execute(flarp.insert(), flarp_data)
-    cm.conn.execute(automated_reports.insert(), automated_reports_data)
-    cm.conn.execute(automated_report_contacts.insert(), contact_data)
-    cm.conn.execute(automated_report_recipients.insert(), recipient_data)
+    cm.conn.execute(insert(AutomatedReport), automated_reports_data)
+    cm.conn.execute(insert(AutomatedReportContact), contact_data)
+    cm.conn.execute(insert(AutomatedReportRecipient), recipient_data)
