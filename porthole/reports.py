@@ -2,15 +2,12 @@ import os
 from inspect import getfullargspec
 from argparse import ArgumentParser
 from .alerts import Alert
-from .app import config
+from .app import config, Session
 from .connections import ConnectionPool
 from .mailer import Mailer
-from .components import (DatabaseLogger,
-                         RecipientsChecker,
-                         ReportActiveChecker,
-                         ReportErrorNotifier,
-                         ReportWriter)
+from .components import ReportErrorNotifier, ReportWriter
 from .logger import PortholeLogger
+from .models import AutomatedReport, ReportLog
 from .uploaders import S3Uploader
 
 
@@ -239,15 +236,20 @@ class GenericReport(BasicReport):
         if publish_to.lower() not in ['s3', 'email', 'both']:
             raise ValueError("Reports can only be published to s3 or email.")
         self.publish_to = publish_to.lower()
-        self.db_logger = None
         self.active = None
         self.uploaded_to_s3 = False
         self.all_recipients = []
-        self.check_if_active()
+        self.session = Session()
+        self.report_record = None
+        self.initialize_report_record()
         disable_report_logs = config['Logging'].getboolean('disable_report_logs', False)
         should_log = self.logging_enabled and not disable_report_logs
         if self.active and should_log:
-            self.initialize_db_logger()
+            self.report_log = ReportLog(report_name=self.report_name)
+            self.session.add(self.report_log)
+            self.session.commit()
+        else:
+            self.report_log = None
 
     @property
     def record_count(self):
@@ -256,30 +258,11 @@ class GenericReport(BasicReport):
         else:
             return 0
 
-    def initialize_db_logger(self):
-        self.db_logger = DatabaseLogger(
-            cm=self.get_conn(self.default_db),
-            report_name=self.report_name,
-            logger=self.logger
-        )
-        self.db_logger.create_record()
-
-    def check_if_active(self):
-        self.active = ReportActiveChecker(
-            cm=self.get_conn(self.default_db),
-            report_name=self.report_name,
-            logger=self.logger
-        )
-
-    def get_recipients(self):
-        """Performs lookup in database for report recipients based on report name."""
-
-        checker = RecipientsChecker(
-            cm=self.get_conn(self.default_db),
-            report_name=self.report_name,
-            logger=self.logger
-        )
-        self.to_recipients, self.cc_recipients = checker.get_recipients()
+    def initialize_report_record(self):
+        self.report_record = self.session.query(AutomatedReport).filter_by(report_name=self.report_name).one()
+        self.active = self.report_record.active
+        self.to_recipients = self.report_record.to_recipients[:]
+        self.cc_recipients = self.report_record.cc_recipients[:]
         self.all_recipients = self.to_recipients + self.cc_recipients
 
     def check_whether_to_publish(self):
@@ -291,6 +274,16 @@ class GenericReport(BasicReport):
         else:
             return True
 
+    def cleanup(self):
+        if self.report_writer:
+            self.report_writer.close_workbook()
+        if self.report_log is not None:
+            recipients = self.email.all_sent_to_recipients if self.email_sent else None
+            self.report_log.finalize(recipients, self.logger.error_buffer.buffer[:])
+        self.conns.close_all()
+        self.session.commit()
+        self.session.close()
+
     def execute(self):
         """
         After instantiation and setup, and after
@@ -298,18 +291,13 @@ class GenericReport(BasicReport):
         this method executes and finalizes the report,
         ensures errors are handled, and performs cleanup.
         """
-        if self.report_writer:
-            self.report_writer.close_workbook()
         if self.active:
             should_publish = self.check_whether_to_publish()
             if should_publish:
                 self.publish()
-            if self.db_logger is not None:
-                recipients = self.email.all_sent_to_recipients if self.email_sent else None
-                self.db_logger.finalize_record(recipients)
         if self.has_errors:
             self.send_failure_notification()
-        self.conns.close_all()
+        self.cleanup()
 
     def publish(self):
         if self.publish_to == 'email':
