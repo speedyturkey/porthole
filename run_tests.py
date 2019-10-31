@@ -3,7 +3,6 @@ import unittest
 from porthole import config, ConnectionManager
 from porthole.app import default_engine, Session
 from porthole.models import Base
-from porthole.models import metadata
 from tests.fixtures import test_metadata, create_fixtures
 
 
