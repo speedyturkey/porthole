@@ -77,7 +77,7 @@ class AutomatedReportContact(Base):
 class ReportLog(Base):
     __tablename__ = "report_logs"
     id = Column("id", Integer, primary_key=True)
-    report_name =Column("report_name", String(64), nullable=False)
+    report_name = Column("report_name", String(64), nullable=False)
     started_at = Column("started_at", DateTime)
     completed_at = Column("completed_at", DateTime)
     success = Column("success", Boolean)
