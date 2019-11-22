@@ -4,7 +4,7 @@ import warnings
 from logging.handlers import TimedRotatingFileHandler
 import sqlalchemy as sa
 from .app import config
-from .models import report_log_details
+from .models import ReportLogDetail
 
 
 class PortholeLogger(object):
@@ -25,7 +25,7 @@ class PortholeLogger(object):
             name: str,
             logfile: str = None,
             log_to_db: bool = False,
-            log_table: sa.table = report_log_details,
+            log_table: sa.table = ReportLogDetail,
             fmt: str = DEFAULT_FORMAT,
             datefmt: str = DEFAULT_DATE_FORMAT
     ):
@@ -149,7 +149,7 @@ class DatabaseHandler(logging.Handler):
         self._log_record_to_db(data)
 
     def _log_record_to_db(self, log_data: dict):
-        statement = self.table.insert().values(**log_data)
+        statement = sa.insert(self.table).values(**log_data)
         try:
             self.cm.connect()
             self.cm.conn.execute(statement)

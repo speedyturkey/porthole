@@ -7,6 +7,7 @@ Test email is not sent on failure.
 
 from types import MethodType
 import unittest
+from sqlalchemy.exc import InvalidRequestError
 from porthole import config, BasicReport, GenericReport, ReportRunner, QueryExecutor
 
 
@@ -58,7 +59,7 @@ class TestGenericReport(unittest.TestCase):
             report_title='Test Report - Active'
         )
         self.assertFalse(report.email_sent)
-        self.assertIsNotNone(report.db_logger)
+        self.assertIsNotNone(report.report_log)
 
     def test_disable_logging(self):
         report = GenericReport(
@@ -66,8 +67,7 @@ class TestGenericReport(unittest.TestCase):
             report_title='Test Report - Active',
             logging_enabled=False
         )
-        self.assertFalse(hasattr(report, 'report_log'))
-        self.assertIsNone(report.db_logger)
+        self.assertIsNone(report.report_log)
 
     def test_disable_report_logs(self):
         config['Logging']['disable_report_logs'] = 'True'
@@ -75,7 +75,7 @@ class TestGenericReport(unittest.TestCase):
             report_name='test_report_active',
             report_title='Test Report - Active'
         )
-        self.assertIsNone(report.db_logger)
+        self.assertIsNone(report.report_log)
         config['Logging']['disable_report_logs'] = 'False'
 
     def test_send_email(self):
@@ -84,13 +84,11 @@ class TestGenericReport(unittest.TestCase):
             report_title='Test Report - Active'
         )
         report.send_email = MethodType(mocked_send_email, report)
-        report.get_recipients()
         report.subject = "test_send_email"
         report.message = "test_send_email"
         report.build_and_send_email()
         self.assertTrue(report.email_sent)
-        report.db_logger.finalize_record()
-        report.conns.close_all()
+        report.cleanup()
 
     def test_send_if_blank(self):
         report = GenericReport(
@@ -100,7 +98,6 @@ class TestGenericReport(unittest.TestCase):
         report.send_if_blank = False
         report.build_file()
         report.send_email = MethodType(mocked_send_email, report)
-        report.get_recipients()
         report.subject = "test_send_if_blank"
         report.message = "test_send_if_blank"
         report.build_and_send_email()
@@ -110,17 +107,16 @@ class TestGenericReport(unittest.TestCase):
         report.report_writer.record_count += 1
         report.build_and_send_email()
         self.assertTrue(report.email_sent)
-        report.db_logger.finalize_record()
-        report.conns.close_all()
+        report.cleanup()
 
     def test_non_existent_report_raises_error(self):
         """Should log an error if attempt to instantiate report that doesn't exist"""
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(InvalidRequestError) as context:
             report = GenericReport(
                 report_name='does_not_exist',
                 report_title='Does Not Exist'
             )
-        self.assertTrue("Report <does_not_exist> was not found" in str(context.exception))
+        self.assertTrue("No row was found" in str(context.exception))
 
     def test_non_existent_query_raises_error(self):
         """Should raise an error if attempt to run query that doesn't exist"""
@@ -136,7 +132,7 @@ class TestGenericReport(unittest.TestCase):
         )
 
         self.assertFalse(report.logger.error_buffer.empty)
-        report.db_logger.finalize_record()
+        report.cleanup()
 
     def test_send_failure_notification_on_error(self):
         """On error, should send failure notification and should not send report."""
@@ -163,7 +159,6 @@ class TestGenericReport(unittest.TestCase):
             report_name='test_report_active',
             report_title='Test Report - Active'
         )
-        report.get_recipients()
         self.assertTrue(report.to_recipients[0] == 'speedyturkey@gmail.com')
         self.assertTrue(report.cc_recipients[0] == 'DaStump@example.com')
         self.assertTrue(len(report.all_recipients) == 2)
@@ -174,6 +169,7 @@ class TestGenericReport(unittest.TestCase):
             report_title='Test Report - Active',
             publish_to='s3'
         )
+        report_log_id = report.report_log.id
         report.build_file()
         report.create_worksheet_from_query(
             sheet_name='Sheet1',
@@ -185,7 +181,7 @@ class TestGenericReport(unittest.TestCase):
         self.assertFalse(report.email_sent)
 
         cm = report.add_conn(report.default_db)
-        sql = f"select recipients from {cm.schema}.report_logs where id = {report.db_logger.report_log.primary_key}"
+        sql = f"select recipients from {cm.schema}.report_logs where id = {report_log_id}"
         with QueryExecutor(report.default_db) as qe:
             result = qe.execute_query(sql=sql)
         self.assertIsNone(result.result_data[0]['recipients'])

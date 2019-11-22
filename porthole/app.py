@@ -1,4 +1,5 @@
 import os
+from sqlalchemy.orm import sessionmaker
 from configparser import ConfigParser
 
 
@@ -38,6 +39,13 @@ class PortholeConfig(ConfigParser):
 
 
 config = PortholeConfig()
+
+from .connections import ConnectionManager
+default_database = config['Default']['database']
+cm = ConnectionManager(db=default_database)
+default_engine = cm.create_engine()
+Session = sessionmaker(bind=default_engine)
+default_session = Session()
 
 if __name__ == '__main__':
     pass
