@@ -4,7 +4,7 @@ from porthole.contact_management import AutomatedReportContactManager
 
 class TestAutomatedReportContactManager(unittest.TestCase):
     def test_add(self):
-        manager = AutomatedReportContactManager("Test")
+        manager = AutomatedReportContactManager()
         self.assertFalse(
             manager.report_exists("Foo")
         )
@@ -13,12 +13,6 @@ class TestAutomatedReportContactManager(unittest.TestCase):
         )
         self.assertFalse(
             manager.contact_exists("dip.dobson@maximumfun.org")
-        )
-        self.assertFalse(
-            manager.report_recipient_exists("Foo", "chip.dipson@maximumfun.org")
-        )
-        self.assertFalse(
-            manager.report_recipient_exists("Foo", "dip.dobson@maximumfun.org")
         )
         manager.add_report("Foo")
         manager.add_contact("Chip", "Dipson", "chip.dipson@maximumfun.org")

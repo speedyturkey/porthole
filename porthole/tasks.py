@@ -1,10 +1,10 @@
 from porthole import config
+from porthole.app import Session
 from porthole.connections import ConnectionPool
 from porthole.components import (
-    DatabaseLogger,
     PortholeLogger,
-    ReportActiveChecker
 )
+from porthole.models import AutomatedReport, ReportLog
 
 
 class DataTask:
@@ -29,12 +29,17 @@ class DataTask:
         )
         self.default_db = config['Default'].get('database')
         self.conns = ConnectionPool(dbs=[self.default_db], logger=self.logger)
-        self.db_logger = None
         self.active = None
         self.success = None
-        self.check_if_active()
-        if self.active and self.logging_enabled:
-            self.initialize_db_logger()
+        self.session = Session()
+        self.report_record = None
+        self.initialize_report_record()
+        disable_report_logs = config['Logging'].getboolean('disable_report_logs', False)
+        should_log = self.logging_enabled and not disable_report_logs
+        if self.active and should_log:
+            self.report_log = ReportLog(report_name=self.task_name)
+        else:
+            self.report_log = None
 
     def get_conn(self, db):
         return self.conns.pool.get(db)
@@ -42,20 +47,9 @@ class DataTask:
     def add_conn(self, db):
         return self.conns.add_connection(db)
 
-    def initialize_db_logger(self):
-        self.db_logger = DatabaseLogger(
-            cm=self.get_conn(self.default_db),
-            report_name=self.task_name,
-            logger=self.logger
-        )
-        self.db_logger.create_record()
-
-    def check_if_active(self):
-        self.active = ReportActiveChecker(
-            cm=self.get_conn(self.default_db),
-            report_name=self.task_name,
-            logger=self.logger
-        )
+    def initialize_report_record(self):
+        self.report_record = self.session.query(AutomatedReport).filter_by(report_name=self.task_name).one()
+        self.active = self.report_record.active
 
     def execute(self):
         err = None
@@ -68,8 +62,8 @@ class DataTask:
             self.success = False
             self.logger.exception(e)
         finally:
-            if self.db_logger is not None:
-                self.db_logger.finalize_record()
+            if self.report_log is not None:
+                self.report_log.finalize(errors=self.logger.error_buffer.buffer[:])
             self.conns.close_all()
             if err is not None:
                 raise err

@@ -7,7 +7,6 @@ try:
     from .filters import ResultFilter
     from .logger import PortholeLogger
     from .mailer import Mailer
-    from .related_record import RelatedRecord
     from .reports import BasicReport, GenericReport, ReportRunner
     from .tasks import DataTask
     from .queries import QueryExecutor, QueryGenerator, QueryReader, QueryResult
