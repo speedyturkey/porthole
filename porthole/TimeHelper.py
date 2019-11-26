@@ -53,7 +53,3 @@ def date_to_string(date: datetime.date):
 
 def convert_tz(timestamp: datetime.datetime, convert_to: str = 'US/Eastern'):
     return timestamp.astimezone(pytz.timezone(convert_to))
-
-
-if __name__ == '__main__':
-    pass

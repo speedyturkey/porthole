@@ -1,7 +1,7 @@
 import os, unittest, json
 from datetime import date
 from collections import OrderedDict
-from porthole import QueryGenerator, QueryReader, QueryResult, QueryExecutor
+from porthole import QueryReader, QueryResult, QueryExecutor
 from porthole.queries import RowDict
 
 
@@ -46,7 +46,10 @@ class TestQueries(unittest.TestCase):
 
     def test_queryreader_params(self):
         """A QueryReader can be instantiated when all required parameters are provided."""
-        s = QueryReader(filename='tests/test_query_with_params', params = {'foo': 'value1', 'b_ar': 'value2', 'Baz': 'value3'})
+        s = QueryReader(
+            filename='tests/test_query_with_params',
+            params={'foo': 'value1', 'b_ar': 'value2', 'Baz': 'value3'}
+        )
         self.assertNotEqual(s.raw_sql, s.sql)
         self.assertIsNotNone(s.raw_sql)
         self.assertIsNotNone(s.sql)
@@ -54,7 +57,7 @@ class TestQueries(unittest.TestCase):
     def test_queryreader_missing_param(self):
         """A QueryReader instantiated with missing parameters raises a NameError."""
         with self.assertRaises(NameError):
-            s = QueryReader(filename='tests/test_query_with_params', params = {'foo': 'value1'})
+            s = QueryReader(filename='tests/test_query_with_params', params={'foo': 'value1'})
 
     def test_queryreader_validate(self):
         """The QueryReader.validate() method raises a NameError when parameters are missing."""

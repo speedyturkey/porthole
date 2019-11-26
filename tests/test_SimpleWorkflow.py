@@ -1,6 +1,6 @@
-import sys
 import unittest
 from porthole import SimpleWorkflow
+
 
 class TestSimpleWorkflow(unittest.TestCase):
 
@@ -8,8 +8,8 @@ class TestSimpleWorkflow(unittest.TestCase):
         """A single function with no parameters should be executed,
         and its success should be reported."""
         functions = [
-                    {'function': true_function, 'args': {}}
-                    ]
+            {'function': true_function, 'args': {}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertTrue(workflow.completed)
@@ -19,8 +19,8 @@ class TestSimpleWorkflow(unittest.TestCase):
         """A single function with no parameters should be executed,
         and its failure should be reported."""
         functions = [
-                    {'function': false_function, 'args': {}}
-                    ]
+            {'function': false_function, 'args': {}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertFalse(workflow.completed)
@@ -30,8 +30,8 @@ class TestSimpleWorkflow(unittest.TestCase):
         """A single function with one parameter should be executed,
         and its success should be reported."""
         functions = [
-                    {'function': function_with_param, 'args': {'param': True}}
-                    ]
+            {'function': function_with_param, 'args': {'param': True}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertTrue(workflow.completed)
@@ -41,8 +41,8 @@ class TestSimpleWorkflow(unittest.TestCase):
         """A single function with one parameter should be executed,
         and its failure should be reported."""
         functions = [
-                    {'function': function_with_param, 'args': {'param': False}}
-                    ]
+            {'function': function_with_param, 'args': {'param': False}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertFalse(workflow.completed)
@@ -52,9 +52,9 @@ class TestSimpleWorkflow(unittest.TestCase):
         """Multiple function with one parameter should be executed,
         and its success should be reported."""
         functions = [
-                    {'function': function_with_param, 'args': {'param': True}},
-                    {'function': other_function_with_param, 'args': {'other_param': True}}
-                    ]
+            {'function': function_with_param, 'args': {'param': True}},
+            {'function': other_function_with_param, 'args': {'other_param': True}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertTrue(workflow.completed)
@@ -64,10 +64,10 @@ class TestSimpleWorkflow(unittest.TestCase):
         """Multiple function with one parameter should be executed,
         and its success should be reported."""
         functions = [
-                    {'function': function_with_param, 'args': {'param': True}},
-                    {'function': other_function_with_param, 'args': {'other_param': False}},
-                    {'function': function_with_param, 'args': {'param': True}}
-                    ]
+            {'function': function_with_param, 'args': {'param': True}},
+            {'function': other_function_with_param, 'args': {'other_param': False}},
+            {'function': function_with_param, 'args': {'param': True}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertFalse(workflow.completed)
@@ -77,18 +77,21 @@ class TestSimpleWorkflow(unittest.TestCase):
         """If one of the functions raises an exception, it should be handled and the overall
         workflow should be considered a failure."""
         functions = [
-                    {'function': function_with_param, 'args': {'param': True}},
-                    {'function': raise_exception, 'args': {}}
-                    ]
+            {'function': function_with_param, 'args': {'param': True}},
+            {'function': raise_exception, 'args': {}}
+        ]
         workflow = SimpleWorkflow(functions=functions)
         workflow.run()
         self.assertFalse(workflow.completed)
 
+
 def true_function():
     return True
 
+
 def false_function():
     return False
+
 
 def function_with_param(param):
     if param:
@@ -96,18 +99,13 @@ def function_with_param(param):
     else:
         return False
 
+
 def other_function_with_param(other_param):
     if other_param:
         return True
     else:
         return False
 
+
 def raise_exception():
     raise Exception
-
-def run():
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestSimpleWorkflow)
-    unittest.TextTestRunner(verbosity=3).run(suite)
-
-if __name__ == '__main__':
-    unittest.main()

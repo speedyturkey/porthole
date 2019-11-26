@@ -1,9 +1,8 @@
 import os
-import datetime
 import unittest
-from porthole import config
 from porthole import WorkbookEditor
 import openpyxl
+
 
 class TestWorkbookEditor(unittest.TestCase):
     """
@@ -67,7 +66,4 @@ class TestWorkbookEditor(unittest.TestCase):
         values = wb2.get_all_values(sheet_name)
         self.assertEqual(values[0][0], 3.14)
 
-
-if __name__ == '__main__':
-    unittest.main()
 

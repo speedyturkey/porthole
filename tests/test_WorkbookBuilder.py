@@ -1,7 +1,6 @@
 import os
 import datetime
 import unittest
-from porthole import config
 from porthole import WorkbookBuilder
 
 

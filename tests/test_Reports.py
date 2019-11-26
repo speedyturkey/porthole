@@ -11,6 +11,9 @@ from sqlalchemy.exc import InvalidRequestError
 from porthole import config, BasicReport, GenericReport, ReportRunner, QueryExecutor
 
 
+TEST_QUERY = "select count(*) from sys.flarp;"
+
+
 def mocked_send_email(self):
     print("(Mock) email sent.")
     self.email_sent = True
@@ -26,8 +29,10 @@ class TestBasicReport(unittest.TestCase):
         report = BasicReport(report_title='Basic Report - Test')
         report.send_email = MethodType(mocked_send_email, report)
         report.build_file()
-        report.create_worksheet_from_query(sheet_name='Sheet1',
-                                            sql=TEST_QUERY)
+        report.create_worksheet_from_query(
+            sheet_name='Sheet1',
+            sql=TEST_QUERY
+        )
         report.to_recipients.append(config['Default']['notification_recipient'])
         report.subject = 'Basic Report - Test'
         report.message = 'Basic Report Test'
@@ -212,15 +217,3 @@ class TestReportRunner(unittest.TestCase):
         self.assertTrue(parsed.debug_mode)
         parsed = ReportRunner().parse_args(['--debug'])
         self.assertTrue(parsed.debug_mode)
-
-
-TEST_QUERY = "select count(*) from sys.flarp;"
-
-
-def run():
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestGenericReport)
-    unittest.TextTestRunner(verbosity=3).run(suite)
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -138,10 +138,12 @@ class QueryGenerator(object):
         field_names = result_proxy.keys()
         row_proxies = result_proxy.fetchall()
         result_data = [row.values() for row in row_proxies]
-        query_results = QueryResult(result_count=len(result_data),
-                                    field_names=field_names,
-                                    result_data=result_data,
-                                    row_proxies=row_proxies)
+        query_results = QueryResult(
+            result_count=len(result_data),
+            field_names=field_names,
+            result_data=result_data,
+            row_proxies=row_proxies
+        )
         return query_results
 
 

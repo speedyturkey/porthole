@@ -65,13 +65,15 @@ class BasicReport:
         self.attachments.append(report_writer.report_file)
         self.report_writer = report_writer
 
-    def create_worksheet_from_query(self,
-                                    sheet_name,
-                                    db=None,
-                                    query=None,
-                                    sql=None,
-                                    query_kwargs=None,
-                                    worksheet_kwargs=None):
+    def create_worksheet_from_query(
+            self,
+            sheet_name,
+            db=None,
+            query=None,
+            sql=None,
+            query_kwargs=None,
+            worksheet_kwargs=None
+    ):
         """Delegates functionality to ReportWriter."""
         if db is None:
             db = self.default_db

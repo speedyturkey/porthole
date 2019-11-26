@@ -1,6 +1,6 @@
 
 
-class SimpleWorkflow():
+class SimpleWorkflow:
     """
     :functions: A list of functions to be executed:
         {'function': function_object, 'args': {'arg_name': arg_value}}
@@ -31,7 +31,7 @@ class SimpleWorkflow():
                 self.completed = False
                 self.failed_on = function
                 break
-        else: # only execute if loop finishes without breaking
+        else:  # only execute if loop finishes without breaking
             self.completed = True
 
 

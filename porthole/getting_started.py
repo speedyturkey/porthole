@@ -68,7 +68,7 @@ def new_config():
         print("Created directory {}.".format(configdir))
 
     if not os.path.exists(configpath):
-        with open (configpath, 'w') as f:
+        with open(configpath, 'w') as f:
             parser.write(f)
         print("Created blank template {}.".format(configpath))
 
