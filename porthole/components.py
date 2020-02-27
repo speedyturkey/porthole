@@ -140,10 +140,9 @@ class ReportErrorNotifier:
         self.notified = True
 
     def construct_message(self):
-        msg = """Execution of the following report failed: {}
+        msg = f"""Execution of the following report failed: {self.report_title}
 
-The following errors were logged:\n""".format(self.report_title)
-        msg = msg.format(self.report_title)
-        for i, error in enumerate(self.error_buffer, 1):
-            msg += str(i) + '. ' + str(error) + '\n'
+The following errors were logged:\n"""
+        for error in self.error_buffer:
+            msg += f"{error.message}\n{error.exc_text}\n"
         return msg
