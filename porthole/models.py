@@ -38,6 +38,7 @@ class AutomatedReport(Base):
     created_at = Column("created_at", DateTime, server_default=func.now())
     updated_at = Column("updated_at", DateTime, onupdate=func.now())
     report_description = Column("report_description", String(255))
+    schedule_timezone = Column("schedule_timezone", String(32), server_default="UTC")
     schedule_minute = Column("schedule_minute", String(32))
     schedule_hour = Column("schedule_hour", String(32))
     schedule_day_of_week = Column("schedule_day_of_week", String(32))
